@@ -15,7 +15,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .tab{flex:1;padding:10px;text-align:center;border-radius:var(--radius) var(--radius) 0 0;cursor:pointer;font-size:.95rem;font-weight:600;border:1px solid transparent;transition:.2s;background:var(--card);color:var(--text2)}
 .tab.active{background:var(--card2);color:#fff;border-color:var(--border);border-bottom-color:transparent}
 .container{max-width:800px;margin:0 auto;padding:0 16px 40px}
-.station{background:var(--card);border-radius:var(--radius);margin-top:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.station{background:var(--card);border-radius:var(--radius);margin-top:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.3);scroll-margin-top:120px}
 .station-header{padding:14px 18px;background:var(--card2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
 .station-header .icon{font-size:1.3rem}
 .station-header h2{font-size:1.05rem;font-weight:600;color:#fff}
@@ -51,7 +51,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .countdown{font-size:.7rem;color:var(--text2)}
 .error-msg{padding:8px 18px;background:rgba(239,68,68,.15);color:#ef4444;font-size:.8rem}
 .section-label{font-size:.8rem;color:var(--text2);padding:12px 0 4px;text-align:center;margin-top:8px}
-@media(max-width:500px){.route-main{padding:10px 12px;gap:6px}.route-num{min-width:40px;font-size:.8rem;padding:3px 6px}.route-dest{font-size:.8rem}.eta-badge{font-size:.7rem;padding:2px 7px}.route-stops{padding-left:48px}}
+/* Nav bar for 所有 tab */
+.nav-bar{display:flex;gap:6px;padding:10px 16px 0;max-width:800px;margin:0 auto;flex-wrap:wrap}
+.nav-btn{flex:1;min-width:90px;padding:8px 12px;text-align:center;border-radius:var(--radius);cursor:pointer;font-size:.82rem;font-weight:600;border:1px solid var(--border);transition:.2s;background:var(--card);color:var(--text2);text-decoration:none}
+.nav-btn:hover{background:var(--card2);color:#fff}
+.nav-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+@media(max-width:500px){.route-main{padding:10px 12px;gap:6px}.route-num{min-width:40px;font-size:.8rem;padding:3px 6px}.route-dest{font-size:.8rem}.eta-badge{font-size:.7rem;padding:2px 7px}.route-stops{padding-left:48px}.nav-btn{font-size:.72rem;padding:6px 8px}}
 </style>
 </head>
 <body>
@@ -83,10 +88,11 @@ async function fetchGMB(rid,sid){
 }
 
 function processKMB(etas){
+  // Key by route+dir+dest (ignore service_type to deduplicate variants like 23M)
   const groups={};
   for(const e of etas){
     if(!e.route)continue;
-    const k=e.route+'|'+e.dir+'|'+e.service_type+'|'+e.dest_tc;
+    const k=e.route+'|'+e.dir+'|'+e.dest_tc;
     if(!groups[k])groups[k]={route:e.route,dir:e.dir,service_type:e.service_type,dest:e.dest_tc,dest_en:e.dest_en,co:e.co||'KMB',seq:e.seq,etas:[],remarks:new Set()};
     const g=groups[k];
     if(e.eta)g.etas.push(e.eta);
@@ -95,6 +101,8 @@ function processKMB(etas){
   const now=new Date();
   return Object.values(groups).map(g=>{
     g.etas=g.etas.map(eta=>{const t=new Date(eta);return{time:eta,mins:Math.round((t-now)/60000)}}).filter(e=>e.mins>=-2).sort((a,b)=>a.mins-b.mins);
+    // Deduplicate ETAs with same minute
+    const seen=new Set();g.etas=g.etas.filter(e=>{const k=e.mins;if(seen.has(k))return false;seen.add(k);return true;});
     g.remarks=[...g.remarks].join(', ');
     return g;
   });
@@ -147,11 +155,18 @@ function renderStation(title,icon,stopIds,gmbConfig,routeFilter){
     for(const r of processKMB(data)){r.sourceStop=label;all.push(r);}
   }
   if(gmbConfig){const data=etaCache['gmb_54s']||[];for(const r of processGMB(data,gmbConfig.routeSeq)){r.sourceStop='54S';all.push(r);}}
-  if(routeFilter)all=all.filter(r=>routeFilter.has(r.route));
+  if(routeFilter){
+    all=all.filter(r=>{
+      if(!routeFilter.has(r.route))return false;
+      // For 54S in 常用 tab, only show outbound (往黃大仙)
+      if(r.route==='54S'&&r.dir!=='O')return false;
+      return true;
+    });
+  }
   const pref=routeFilter?[...routeFilter]:[];
   all.sort((a,b)=>{const ai=pref.indexOf(a.route),bi=pref.indexOf(b.route);if(ai>=0&&bi>=0)return ai-bi;if(ai>=0)return-1;if(bi>=0)return 1;return a.route.localeCompare(b.route,void 0,{numeric:true})});
   if(!all.length)return '<div class="station"><div class="station-header"><span class="icon">'+icon+'</span><h2>'+title+'</h2></div><div class="station-body"><div class="empty">暫無班次資料</div></div></div>';
-  return '<div class="station"><div class="station-header"><span class="icon">'+icon+'</span><h2>'+title+'</h2><span class="badge">'+all.length+' 條路線</span></div><div class="station-body">'+all.map(renderRouteRow).join('')+'</div></div>';
+  return '<div class="station" id="stn-'+title.replace(/[^a-zA-Z0-9\u4e00-\u9fff]/g,'')+'"><div class="station-header"><span class="icon">'+icon+'</span><h2>'+title+'</h2><span class="badge">'+all.length+' 條路線</span></div><div class="station-body">'+all.map(renderRouteRow).join('')+'</div></div>';
 }
 
 function render(){
@@ -159,7 +174,15 @@ function render(){
   if(currentTab==='fav'){
     c.innerHTML=renderStation('順利消防局','🚏',{KT183:STOPS.KT183,KT184:STOPS.KT184},GMB_54S,FAV_ROUTES);
   }else{
-    c.innerHTML='<div class="section-label">▼ 順利消防局</div>'+renderStation('順利消防局','🚏',{KT183:STOPS.KT183,KT184:STOPS.KT184},GMB_54S,null)+'<div class="section-label">▼ 景泰街站</div>'+renderStation('景泰街站 (WT298)','🚏',{WT298:STOPS.WT298},null,null)+'<div class="section-label">▼ 敬業街站</div>'+renderStation('敬業街站 (KT220)','🚏',{KT220:STOPS.KT220},null,null);
+    c.innerHTML=
+      '<div class="nav-bar">'+
+        '<a class="nav-btn" href="#stn-順利消防局" onclick="event.preventDefault();document.getElementById(\'stn-順利消防局\').scrollIntoView({behavior:\'smooth\'});">🚏 順利消防局</a>'+
+        '<a class="nav-btn" href="#stn-景泰街站WT298" onclick="event.preventDefault();document.getElementById(\'stn-景泰街站WT298\').scrollIntoView({behavior:\'smooth\'});">🚏 景泰街站</a>'+
+        '<a class="nav-btn" href="#stn-敬業街站KT220" onclick="event.preventDefault();document.getElementById(\'stn-敬業街站KT220\').scrollIntoView({behavior:\'smooth\'});">🚏 敬業街站</a>'+
+      '</div>'+
+      renderStation('順利消防局','🚏',{KT183:STOPS.KT183,KT184:STOPS.KT184},GMB_54S,null)+
+      renderStation('景泰街站 (WT298)','🚏',{WT298:STOPS.WT298},null,null)+
+      renderStation('敬業街站 (KT220)','🚏',{KT220:STOPS.KT220},null,null);
   }
 }
 
