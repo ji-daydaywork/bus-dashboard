@@ -81,6 +81,8 @@
     transition: border-color 0.3s;
   }
   .stop-card:hover { border-color: var(--accent); }
+  .gmb-card .stop-header h2 { color: var(--purple); }
+  .gmb-card:hover { border-color: var(--purple); }
   .stop-header {
     padding: 14px 18px;
     background: linear-gradient(135deg, #1a1f2e, var(--card-bg));
@@ -215,11 +217,19 @@ const STOPS = [
   { id: 'D9896F1A5B7C97C0', name: '順利消防局', code: 'KT183', dir: '往尖沙咀/旺角方向' },
   { id: '7B9D5D0407DB14D3', name: '順利消防局', code: 'KT420', dir: '往順利/順天方向' },
   { id: '927CE95D5C98C195', name: '順利消防局', code: 'KT184', dir: '往清水灣/西貢方向' },
-  // 加其他站：
+  // 加其他 KMB 站：
   // { id: 'STOP_ID', name: '站名', code: '編號', dir: '方向' },
 ];
 
+// GMB 專線小巴 — 獨立設定
+const GMB_STOPS = [
+  { gtfs_id: '2003179', stop_id: '20010135', name: '54S 順利循環線', code: 'GMB', dir: '利安里 · 黃大仙 · 循環' },
+  // 加其他 GMB 站：
+  // { gtfs_id: 'XXXXXXX', stop_id: 'XXXXXXXX', name: '路線名', code: 'GMB', dir: '方向' },
+];
+
 const API_BASE = 'https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/';
+const GMB_API_BASE = 'https://data.etagmb.gov.hk/eta/route-stop/';
 const REFRESH_INTERVAL = 30000; // 30 秒
 const COUNTDOWN_REFRESH = 1000;  // 每秒更新倒數
 
@@ -241,10 +251,14 @@ async function fetchStopETA(stop) {
 }
 
 async function fetchAll() {
-  const results = await Promise.all(STOPS.map(fetchStopETA));
+  const kmbResults = STOPS.length > 0 ? await Promise.all(STOPS.map(fetchStopETA)) : [];
+  const gmbResults = GMB_STOPS.length > 0 ? await Promise.all(GMB_STOPS.map(fetchGMBStopETA)) : [];
   lastData = {};
-  for (const r of results) {
+  for (const r of kmbResults) {
     lastData[r.stop.id] = r;
+  }
+  for (const r of gmbResults) {
+    lastData['gmb_' + r.stop.gtfs_id + '_' + r.stop.stop_id] = r;
   }
   render();
   document.getElementById('lastUpdate').textContent =
@@ -274,6 +288,18 @@ function etaToReadable(etaISO) {
   if (!etaISO) return '—';
   const d = new Date(etaISO);
   return d.toLocaleTimeString('zh-HK', { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+async function fetchGMBStopETA(stop) {
+  try {
+    const resp = await fetch(GMB_API_BASE + stop.gtfs_id + '/' + stop.stop_id);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const json = await resp.json();
+    return { stop, data: json.data || [] };
+  } catch (err) {
+    console.error(`Failed to fetch GMB ${stop.name}:`, err);
+    return { stop, data: null, error: err.message };
+  }
 }
 
 function render() {
@@ -341,6 +367,83 @@ function render() {
               ${prefix}${etaToReadable(etaISO)}
               <span class="countdown" data-countdown="${etaISO}">${getCountdown(etaISO)}</span>
             </span>`;
+          }
+        }
+
+        html += `</div></div>`;
+      }
+    }
+
+    html += `</div></div>`;
+  }
+
+  dashboard.innerHTML = html;
+
+  // === GMB 專線小巴 ===
+  for (const stop of GMB_STOPS) {
+    const key = 'gmb_' + stop.gtfs_id + '_' + stop.stop_id;
+    const result = lastData[key];
+    const routes = result?.data || [];
+
+    html += `<div class="stop-card gmb-card">
+      <div class="stop-header">
+        <h2>🚐 ${stop.name}</h2>
+        <span class="stop-id">${stop.code} · ${stop.dir}</span>
+      </div>
+      <div class="stop-body">`;
+
+    if (routes.length === 0 || result?.error) {
+      html += `<div class="no-routes">
+        ${result?.error ? '⚠️ 讀取失敗：' + result.error : '🎉 暫無到站資料'}
+      </div>`;
+    } else {
+      // Group GMB data by route_seq
+      const bySeq = {};
+      for (const r of routes) {
+        if (!r.enabled) continue;
+        const seq = r.route_seq;
+        if (!bySeq[seq]) bySeq[seq] = [];
+        for (const e of (r.eta || [])) {
+          bySeq[seq].push({
+            timestamp: e.timestamp,
+            remarks_tc: e.remarks_tc,
+            diff: e.diff,
+            stop_seq: r.stop_seq
+          });
+        }
+      }
+
+      // Sort ETAs within each seq by timestamp
+      for (const seq of Object.keys(bySeq)) {
+        bySeq[seq].sort((a, b) => (a.timestamp || '').localeCompare(b.timestamp || ''));
+      }
+
+      const seqLabels = {1: '🚐 去程', 2: '🔙 回程'};
+      for (const seq of Object.keys(bySeq).sort()) {
+        const label = seqLabels[seq] || `序:${seq}`;
+        html += `<div class="route-row">
+          <span class="route-badge">54S</span>
+          <span class="route-dest">${label}</span>
+          <div class="etas">`;
+
+        for (const item of (bySeq[seq] || [])) {
+          const ts = item.timestamp;
+          const rmk = item.remarks_tc;
+          if (!ts) {
+            html += `<span class="eta-chip no-service">—</span>`;
+          } else {
+            const etaTime = new Date(ts);
+            const now = new Date();
+            const diffMin = Math.floor((etaTime - now) / 60000);
+            const cls = getEtaClass(diffMin);
+            const prefix = diffMin <= 0 ? '⚡ ' : '';
+            html += `<span class="eta-chip ${cls}" data-eta="${ts}">
+              ${prefix}${etaToReadable(ts)}
+              <span class="countdown" data-countdown="${ts}">${getCountdown(ts)}</span>
+            </span>`;
+            if (rmk) {
+              html += `<span class="eta-chip no-service">${rmk}</span>`;
+            }
           }
         }
 
