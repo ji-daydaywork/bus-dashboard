@@ -99,13 +99,29 @@ function processKMB(etas){
     if(e.rmk_tc)g.remarks.add(e.rmk_tc);
   }
   const now=new Date();
-  return Object.values(groups).map(g=>{
+  let results=Object.values(groups).map(g=>{
     g.etas=g.etas.map(eta=>{const t=new Date(eta);return{time:eta,mins:Math.round((t-now)/60000)}}).filter(e=>e.mins>=-2).sort((a,b)=>a.mins-b.mins);
     // Deduplicate ETAs with same minute
     const seen=new Set();g.etas=g.etas.filter(e=>{const k=e.mins;if(seen.has(k))return false;seen.add(k);return true;});
     g.remarks=[...g.remarks].join(', ');
     return g;
   });
+  // Merge groups with same route+dir that share near-identical ETAs (same physical bus, different service_type variants like 23)
+  const merged=[];
+  for(let i=0;i<results.length;i++){
+    if(results[i]._m)continue;
+    let best=results[i];
+    for(let j=i+1;j<results.length;j++){
+      if(results[j]._m)continue;
+      const b=results[j];
+      if(best.route===b.route&&best.dir===b.dir&&best.etas.length===b.etas.length&&best.etas.length>0){
+        const allClose=best.etas.every((e,k)=>Math.abs(e.mins-b.etas[k].mins)<=2);
+        if(allClose){b._m=true;if(b.dest.includes('循環')&&!best.dest.includes('循環'))best=b;}
+      }
+    }
+    merged.push(best);
+  }
+  return merged;
 }
 
 function processGMB(etas,routeSeq){
