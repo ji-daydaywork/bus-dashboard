@@ -3,487 +3,463 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🚌 巴士到站監控 Dashboard</title>
+<title>巴士到站時間 - 順利</title>
 <style>
-  :root {
-    --bg: #0d1117;
-    --card-bg: #161b22;
-    --border: #30363d;
-    --text: #e6edf3;
-    --text-dim: #8b949e;
-    --accent: #58a6ff;
-    --green: #3fb950;
-    --orange: #d2991d;
-    --red: #f85149;
-    --purple: #a371f7;
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', sans-serif;
-    min-height: 100vh;
-    padding: 20px;
-  }
-  .header {
-    text-align: center;
-    padding: 20px 0 10px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 24px;
-  }
-  .header h1 {
-    font-size: 1.8rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, var(--accent), var(--purple));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  .header .meta {
-    color: var(--text-dim);
-    font-size: 0.85rem;
-    margin-top: 6px;
-  }
-  .status-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 16px;
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    margin-bottom: 20px;
-    font-size: 0.85rem;
-    color: var(--text-dim);
-  }
-  .status-dot {
-    display: inline-block;
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    margin-right: 6px;
-    background: var(--green);
-    animation: pulse 2s infinite;
-  }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
-  }
-  .dashboard {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
-    gap: 16px;
-  }
-  .stop-card {
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    overflow: hidden;
-    transition: border-color 0.3s;
-  }
-  .stop-card:hover { border-color: var(--accent); }
-  .gmb-card .stop-header h2 { color: var(--purple); }
-  .gmb-card:hover { border-color: var(--purple); }
-  .stop-header {
-    padding: 14px 18px;
-    background: linear-gradient(135deg, #1a1f2e, var(--card-bg));
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .stop-header h2 {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--accent);
-  }
-  .stop-header .stop-id {
-    font-size: 0.75rem;
-    color: var(--text-dim);
-    background: #21262d;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-family: monospace;
-  }
-  .stop-body { padding: 6px 12px; }
-  .route-row {
-    display: flex;
-    align-items: center;
-    padding: 10px 6px;
-    border-bottom: 1px solid rgba(48, 54, 61, 0.5);
-    gap: 10px;
-    transition: background 0.15s;
-  }
-  .route-row:last-child { border-bottom: none; }
-  .route-row:hover { background: rgba(88, 166, 255, 0.04); border-radius: 6px; }
-  .route-badge {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 52px;
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-weight: 700;
-    font-size: 0.9rem;
-    background: #1f2937;
-    color: var(--accent);
-    border: 1px solid var(--border);
-    flex-shrink: 0;
-  }
-  .route-dest {
-    color: var(--text-dim);
-    font-size: 0.8rem;
-    flex-shrink: 0;
-    min-width: 100px;
-  }
-  .etas {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    flex: 1;
-    justify-content: flex-end;
-  }
-  .eta-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-  }
-  .eta-chip.soon { background: rgba(63,185,80,0.12); color: var(--green); border: 1px solid rgba(63,185,80,0.3); }
-  .eta-chip.medium { background: rgba(210,153,29,0.12); color: var(--orange); border: 1px solid rgba(210,153,29,0.3); }
-  .eta-chip.late { background: rgba(88,166,255,0.1); color: var(--accent); border: 1px solid rgba(88,166,255,0.2); }
-  .eta-chip.no-service {
-    background: rgba(139,148,158,0.08);
-    color: var(--text-dim);
-    border: 1px solid rgba(139,148,158,0.15);
-    font-weight: 400;
-    font-size: 0.75rem;
-  }
-  .countdown {
-    font-size: 0.7rem;
-    color: var(--text-dim);
-    margin-left: 2px;
-  }
-  .no-routes {
-    text-align: center;
-    padding: 30px;
-    color: var(--text-dim);
-    font-style: italic;
-  }
-  .refresh-btn {
-    background: var(--card-bg);
-    border: 1px solid var(--border);
-    color: var(--accent);
-    padding: 6px 14px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.85rem;
-    transition: all 0.2s;
-  }
-  .refresh-btn:hover {
-    background: #1f2937;
-    border-color: var(--accent);
-  }
-  @media (max-width: 480px) {
-    .dashboard { grid-template-columns: 1fr; }
-    .etas { justify-content: flex-start; margin-top: 4px; }
-    .route-row { flex-wrap: wrap; }
-  }
+:root {
+  --bg: #0f0f14;
+  --card: #1a1a25;
+  --card2: #1e1e2a;
+  --text: #e0e0e0;
+  --text2: #999;
+  --accent: #4a90d9;
+  --accent2: #8b5cf6;
+  --green: #22c55e;
+  --yellow: #f59e0b;
+  --red: #ef4444;
+  --gmb: #a855f7;
+  --border: #2a2a3a;
+  --radius: 12px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+.header { background:linear-gradient(135deg,#1a1a30,#1e1e35); padding:16px 20px; text-align:center; border-bottom:1px solid var(--border); position:sticky; top:0; z-index:10; }
+.header h1 { font-size:1.4rem; color:#fff; }
+.header .update { font-size:0.75rem; color:var(--text2); margin-top:4px; }
+
+/* Tabs */
+.tabs { display:flex; gap:4px; padding:12px 16px 0; max-width:800px; margin:0 auto; }
+.tab { flex:1; padding:10px; text-align:center; border-radius:var(--radius) var(--radius) 0 0; cursor:pointer; font-size:0.95rem; font-weight:600; border:1px solid transparent; transition:all .2s; background:var(--card); color:var(--text2); }
+.tab.active { background:var(--card2); color:#fff; border-color:var(--border); border-bottom-color:transparent; }
+
+/* Container */
+.container { max-width:800px; margin:0 auto; padding:0 16px 40px; }
+
+/* Station Cards */
+.station { background:var(--card); border-radius:var(--radius); margin-top:16px; overflow:hidden; box-shadow:var(--shadow); }
+.station-header { padding:14px 18px; background:var(--card2); border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; }
+.station-header .icon { font-size:1.3rem; }
+.station-header h2 { font-size:1.05rem; font-weight:600; color:#fff; }
+.station-header .badge { font-size:0.7rem; padding:3px 8px; border-radius:10px; background:#333; color:var(--text2); }
+.station-body { padding:8px 0; }
+
+/* Route rows */
+.route { border-bottom:1px solid rgba(255,255,255,0.04); }
+.route:last-child { border-bottom:none; }
+.route-main { display:flex; align-items:center; padding:10px 18px; cursor:pointer; transition:background .15s; gap:10px; min-height:48px; }
+.route-main:hover { background:rgba(255,255,255,0.03); }
+.route-num { font-weight:700; font-size:0.9rem; min-width:48px; padding:4px 8px; border-radius:6px; text-align:center; }
+.route-num.kmb { background:#2563eb; color:#fff; }
+.route-num.gmb { background:var(--gmb); color:#fff; }
+.route-dest { flex:1; font-size:0.88rem; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.route-etas { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
+.eta-badge { padding:3px 9px; border-radius:14px; font-size:0.78rem; font-weight:600; white-space:nowrap; }
+.eta-green { background:#064e3b; color:var(--green); }
+.eta-yellow { background:#451a03; color:var(--yellow); }
+.eta-blue { background:#1e3a5f; color:#60a5fa; }
+.eta-na { background:#333; color:var(--text2); }
+.route-arrow { font-size:0.7rem; color:var(--text2); transition:transform .2s; min-width:16px; text-align:center; }
+.route.expanded .route-arrow { transform:rotate(90deg); }
+
+/* Route stops expand */
+.route-stops { display:none; background:rgba(0,0,0,0.2); padding:6px 18px 12px 70px; }
+.route.expanded .route-stops { display:block; }
+.route-stops .stop-item { display:flex; align-items:center; padding:4px 0; font-size:0.78rem; color:var(--text2); gap:8px; }
+.route-stops .stop-seq { width:24px; height:24px; border-radius:50%; background:var(--border); display:flex; align-items:center; justify-content:center; font-size:0.65rem; font-weight:700; color:var(--text2); flex-shrink:0; }
+.route-stops .stop-seq.current { background:var(--accent); color:#fff; }
+.route-stops .stop-name { flex:1; }
+.route-stops .stop-code { color:var(--text2); font-size:0.68rem; }
+
+/* Empty state */
+.empty { padding:30px; text-align:center; color:var(--text2); font-size:0.9rem; }
+
+/* Loading */
+.loading { text-align:center; padding:40px; color:var(--text2); }
+.spinner { width:30px; height:30px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin .8s linear infinite; margin:0 auto 12px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* Refresh button */
+.refresh-bar { display:flex; justify-content:center; padding:12px; }
+.refresh-btn { padding:8px 20px; border-radius:20px; background:var(--accent); color:#fff; border:none; cursor:pointer; font-size:0.85rem; font-weight:600; }
+.refresh-btn:hover { opacity:0.9; }
+.countdown { font-size:0.7rem; color:var(--text2); margin-left:8px; }
+
+/* Responsive */
+@media(max-width:500px) {
+  .route-main { padding:10px 12px; gap:6px; }
+  .route-num { min-width:40px; font-size:0.8rem; padding:3px 6px; }
+  .route-dest { font-size:0.8rem; }
+  .eta-badge { font-size:0.7rem; padding:2px 7px; }
+  .route-stops { padding-left:48px; }
+}
 </style>
 </head>
 <body>
 
 <div class="header">
-  <h1>🚌 巴士到站即時監控</h1>
-  <div class="meta" id="lastUpdate">載入中...</div>
+  <h1>🚌 巴士到站時間</h1>
+  <div class="update" id="updateTime">載入中...</div>
 </div>
 
-<div class="status-bar">
-  <span><span class="status-dot"></span> 實時監控中 · 每 30 秒自動更新</span>
-  <button class="refresh-btn" onclick="fetchAll()">🔄 立即更新</button>
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('fav')">⭐ 常用</div>
+  <div class="tab" onclick="switchTab('all')">📋 所有</div>
 </div>
 
-<div class="dashboard" id="dashboard"></div>
+<div class="container" id="content">
+  <div class="loading"><div class="spinner"></div>載入中...</div>
+</div>
+
+<div class="refresh-bar">
+  <button class="refresh-btn" onclick="refresh()">🔄 手動更新</button>
+  <span class="countdown" id="countdown"></span>
+</div>
 
 <script>
-// ============================================================
-// 設定：喺呢度加/改你要監控嘅巴士站
-// ============================================================
-const STOPS = [
-  { id: 'D9896F1A5B7C97C0', name: '順利消防局', code: 'KT183', dir: '往尖沙咀/旺角方向' },
-  { id: '7B9D5D0407DB14D3', name: '順利消防局', code: 'KT420', dir: '往順利/順天方向' },
-  { id: '927CE95D5C98C195', name: '順利消防局', code: 'KT184', dir: '往清水灣/西貢方向' },
-  // 加其他 KMB 站：
-  // { id: 'STOP_ID', name: '站名', code: '編號', dir: '方向' },
-];
+// ============ DATA ============
 
-// GMB 專線小巴 — 獨立設定
-const GMB_STOPS = [
-  { gtfs_id: '2003179', stop_id: '20010135', name: '54S 順利循環線', code: 'GMB', dir: '利安里 · 黃大仙 · 循環' },
-  // 加其他 GMB 站：
-  // { gtfs_id: 'XXXXXXX', stop_id: 'XXXXXXXX', name: '路線名', code: 'GMB', dir: '方向' },
-];
+// Stop IDs
+const STOPS = {
+  KT183: 'D9896F1A5B7C97C0',
+  KT184: '927CE95D5C98C195',
+  WT298: '92D1BB946193F239',
+  KT220: '9900A2A1E1FC8260',
+};
 
-const API_BASE = 'https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/';
-const GMB_API_BASE = 'https://data.etagmb.gov.hk/eta/route-stop/';
-const REFRESH_INTERVAL = 30000; // 30 秒
-const COUNTDOWN_REFRESH = 1000;  // 每秒更新倒數
+// GMB 54S config
+const GMB_54S = { routeId: 2003179, stopId: 20010135, routeSeq: 1 };
 
-let lastData = {};
+// Routes to show in 常用 tab
+const FAV_ROUTES = new Set(['23', '23M', '26', '27', '29M', '54S']);
 
-// ============================================================
-// 主邏輯
-// ============================================================
-async function fetchStopETA(stop) {
-  try {
-    const resp = await fetch(API_BASE + stop.id);
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const json = await resp.json();
-    return { stop, data: json.data || [] };
-  } catch (err) {
-    console.error(`Failed to fetch ${stop.name} (${stop.id}):`, err);
-    return { stop, data: null, error: err.message };
-  }
+// Route-stop data (pre-fetched)
+const ROUTE_STOPS = {
+{"23_outbound_1":[{"seq":1,"stop_id":"D1DCF0AEFDDA4EF0","name":"觀塘碼頭 (KT936)"},{"seq":2,"stop_id":"9900A2A1E1FC8260","name":"敬業街 (KT220)"},{"seq":3,"stop_id":"C8FD960431F7210C","name":"成業街休憩公園 (KT448)"},{"seq":4,"stop_id":"B314CF2831F9C5F1","name":"和樂邨 (KT258)"},{"seq":5,"stop_id":"3093477EA64DDA89","name":"祥和苑 (KT261)"},{"seq":6,"stop_id":"E61F9EA5AEE1EFE0","name":"聯合醫院 (KT262)"},{"seq":7,"stop_id":"0511A6AC2CBC9A21","name":"寧波第二中學 (KT170)"},{"seq":8,"stop_id":"6E113B962058A553","name":"順天總站 (KT852)"},{"seq":9,"stop_id":"62F953A6FC5652BE","name":"順安邨 (KT175)"},{"seq":10,"stop_id":"10A6BEC26CE598E8","name":"利業樓 (KT181)"},{"seq":11,"stop_id":"8571BCC3A3E4006E","name":"利恒樓 (KT182)"},{"seq":12,"stop_id":"927CE95D5C98C195","name":"順利消防局 (KT184)"},{"seq":13,"stop_id":"F1B974EDD8C15DBC","name":"安頌樓 (KT165)"},{"seq":14,"stop_id":"DD5B5646768C5F09","name":"聯合醫院 (KT531)"},{"seq":15,"stop_id":"7ABD55FC15C048F0","name":"秀雅道遊樂場 (KT532)"},{"seq":16,"stop_id":"073C44CE5FF431BC","name":"和樂邨 (KT535)"},{"seq":17,"stop_id":"B5CB3F0D26BBBD03","name":"協和街, 裕民坊 (KT538)"},{"seq":18,"stop_id":"71E3EB7E709522C7","name":"觀塘開源道 (KT211)"},{"seq":19,"stop_id":"D1DCF0AEFDDA4EF0","name":"觀塘碼頭 (KT936)"}],"23_outbound_2":[{"seq":1,"stop_id":"6E113B962058A553","name":"順天總站 (KT852)"},{"seq":2,"stop_id":"62F953A6FC5652BE","name":"順安邨 (KT175)"},{"seq":3,"stop_id":"10A6BEC26CE598E8","name":"利業樓 (KT181)"},{"seq":4,"stop_id":"8571BCC3A3E4006E","name":"利恒樓 (KT182)"},{"seq":5,"stop_id":"927CE95D5C98C195","name":"順利消防局 (KT184)"},{"seq":6,"stop_id":"F1B974EDD8C15DBC","name":"安頌樓 (KT165)"},{"seq":7,"stop_id":"DD5B5646768C5F09","name":"聯合醫院 (KT531)"},{"seq":8,"stop_id":"7ABD55FC15C048F0","name":"秀雅道遊樂場 (KT532)"},{"seq":9,"stop_id":"073C44CE5FF431BC","name":"和樂邨 (KT535)"},{"seq":10,"stop_id":"B5CB3F0D26BBBD03","name":"協和街, 裕民坊 (KT538)"},{"seq":11,"stop_id":"71E3EB7E709522C7","name":"觀塘開源道 (KT211)"},{"seq":12,"stop_id":"D1DCF0AEFDDA4EF0","name":"觀塘碼頭 (KT936)"}],"23M_outbound_1":[{"seq":1,"stop_id":"60301BE9A4D23BAC","name":"樂華總站 (KT867)"},{"seq":2,"stop_id":"09CFF9F9E78A6B17","name":"樂雅苑 (KT547)"},{"seq":3,"stop_id":"9D431DF484149B75","name":"安基苑 (KT549)"},{"seq":4,"stop_id":"5358062C769CEC05","name":"牛頭角上邨 (KT377)"},{"seq":5,"stop_id":"3CE7B5D1EBF9C5F7","name":"喜鵲樓 (KT378)"},{"seq":6,"stop_id":"0644E10571B8CA12","name":"觀塘轉車站 - 創紀之城 (KT344)"},{"seq":7,"stop_id":"49229D04FCA51B61","name":"物華街, 裕民坊 (KT250)"},{"seq":8,"stop_id":"B314CF2831F9C5F1","name":"和樂邨 (KT258)"},{"seq":9,"stop_id":"E61F9EA5AEE1EFE0","name":"聯合醫院 (KT262)"},{"seq":10,"stop_id":"0511A6AC2CBC9A21","name":"寧波第二中學 (KT170)"},{"seq":11,"stop_id":"6E113B962058A553","name":"順天總站 (KT852)"},{"seq":12,"stop_id":"62F953A6FC5652BE","name":"順安邨 (KT175)"},{"seq":13,"stop_id":"10A6BEC26CE598E8","name":"利業樓 (KT181)"},{"seq":14,"stop_id":"8571BCC3A3E4006E","name":"利恒樓 (KT182)"},{"seq":15,"stop_id":"927CE95D5C98C195","name":"順利消防局 (KT184)"},{"seq":16,"stop_id":"F1B974EDD8C15DBC","name":"安頌樓 (KT165)"},{"seq":17,"stop_id":"DD5B5646768C5F09","name":"聯合醫院 (KT531)"},{"seq":18,"stop_id":"7ABD55FC15C048F0","name":"秀雅道遊樂場 (KT532)"},{"seq":19,"stop_id":"073C44CE5FF431BC","name":"和樂邨 (KT535)"},{"seq":20,"stop_id":"42B4DEF46BB30887","name":"物華街, 裕民坊 (KT551)"},{"seq":21,"stop_id":"DBEA3F848C7981F2","name":"牛頭角站 (KT691)"},{"seq":22,"stop_id":"84BACA14B0C50790","name":"觀塘官立小學 (KT692)"},{"seq":23,"stop_id":"9C4CA9F8953C0C88","name":"牛頭角下邨貴輝樓 (KT694)"},{"seq":24,"stop_id":"921C19F6147C74A6","name":"振華苑 (KT304)"},{"seq":25,"stop_id":"47C3597662B81B47","name":"樂雅苑 (KT305)"},{"seq":26,"stop_id":"60301BE9A4D23BAC","name":"樂華總站 (KT867)"}],"23M_outbound_2":[{"seq":1,"stop_id":"60301BE9A4D23BAC","name":"樂華總站 (KT867)"},{"seq":2,"stop_id":"09CFF9F9E78A6B17","name":"樂雅苑 (KT547)"},{"seq":3,"stop_id":"9D431DF484149B75","name":"安基苑 (KT549)"},{"seq":4,"stop_id":"5358062C769CEC05","name":"牛頭角上邨 (KT377)"},{"seq":5,"stop_id":"3CE7B5D1EBF9C5F7","name":"喜鵲樓 (KT378)"},{"seq":6,"stop_id":"0644E10571B8CA12","name":"觀塘轉車站 - 創紀之城 (KT344)"},{"seq":7,"stop_id":"49229D04FCA51B61","name":"物華街, 裕民坊 (KT250)"},{"seq":8,"stop_id":"B314CF2831F9C5F1","name":"和樂邨 (KT258)"},{"seq":9,"stop_id":"E61F9EA5AEE1EFE0","name":"聯合醫院 (KT262)"},{"seq":10,"stop_id":"0511A6AC2CBC9A21","name":"寧波第二中學 (KT170)"},{"seq":11,"stop_id":"6E113B962058A553","name":"順天總站 (KT852)"},{"seq":12,"stop_id":"62F953A6FC5652BE","name":"順安邨 (KT175)"},{"seq":13,"stop_id":"10A6BEC26CE598E8","name":"利業樓 (KT181)"},{"seq":14,"stop_id":"8571BCC3A3E4006E","name":"利恒樓 (KT182)"},{"seq":15,"stop_id":"927CE95D5C98C195","name":"順利消防局 (KT184)"},{"seq":16,"stop_id":"F1B974EDD8C15DBC","name":"安頌樓 (KT165)"},{"seq":17,"stop_id":"DD5B5646768C5F09","name":"聯合醫院 (KT531)"},{"seq":18,"stop_id":"7ABD55FC15C048F0","name":"秀雅道遊樂場 (KT532)"},{"seq":19,"stop_id":"073C44CE5FF431BC","name":"和樂邨 (KT535)"},{"seq":20,"stop_id":"42B4DEF46BB30887","name":"物華街, 裕民坊 (KT551)"},{"seq":21,"stop_id":"DBEA3F848C7981F2","name":"牛頭角站 (KT691)"},{"seq":22,"stop_id":"84BACA14B0C50790","name":"觀塘官立小學 (KT692)"},{"seq":23,"stop_id":"CDF0D5A4E1023C8E","name":"九龍灣常悅道 (KT477)"},{"seq":24,"stop_id":"9268B442F0C2807E","name":"九龍灣臨華街 (KT481)"},{"seq":25,"stop_id":"921C19F6147C74A6","name":"振華苑 (KT304)"},{"seq":26,"stop_id":"47C3597662B81B47","name":"樂雅苑 (KT305)"},{"seq":27,"stop_id":"60301BE9A4D23BAC","name":"樂華總站 (KT867)"}],"26_outbound_1":[{"seq":1,"stop_id":"DEDB881565114677","name":"順天總站 (KT853)"},{"seq":2,"stop_id":"581AAE2C80571C37","name":"順安邨 (KT177)"},{"seq":3,"stop_id":"C21FA8D54031D7FF","name":"利業樓 (KT180)"},{"seq":4,"stop_id":"8571BCC3A3E4006E","name":"利恒樓 (KT182)"},{"seq":5,"stop_id":"D9896F1A5B7C97C0","name":"順利消防局 (KT183)"},{"seq":6,"stop_id":"3BA9C90738A8600D","name":"白虹樓 (WT615)"},{"seq":7,"stop_id":"29B66F2353388E18","name":"牛池灣轉車站 - 彩虹站 (WT896)"},{"seq":8,"stop_id":"D1AAD1771F3FA9A0","name":"采頤花園 (WT694)"},{"seq":9,"stop_id":"C80FB453C9F53569","name":"譽．港灣 (WT697)"},{"seq":10,"stop_id":"C5F7AF8D65B268E4","name":"九龍城轉車站- 富豪東方酒店"},{"seq":11,"stop_id":"CD1DFFC7411A44B9","name":"木廠街 (KC719)"},{"seq":12,"stop_id":"3331EE733A2A3EBB","name":"馬坑涌道 (KC726)"},{"seq":13,"stop_id":"7F864B82461F638D","name":"土瓜灣街市 (KC730)"},{"seq":14,"stop_id":"57DFE7792042405B","name":"浙江街遊樂場 (HH735)"},{"seq":15,"stop_id":"7CC8FC8889FF1596","name":"新柳街 (HH737)"},{"seq":16,"stop_id":"DF4F6B54816F5172","name":"紅磡平治街 (HH741)"},{"seq":17,"stop_id":"5CCBD9A6B58BF20D","name":"九龍佑寧堂 (YT670)"},{"seq":18,"stop_id":"A37F8CF766FCF9F3","name":"尖沙咀德成街 (YT556)"},{"seq":19,"stop_id":"1DEB855D55528B03","name":"金馬倫道,清真寺 (YT560)"},{"seq":20,"stop_id":"D2217D7746597D10","name":"尖沙咀轉車站 - 中間道 (YT563)"},{"seq":21,"stop_id":"5D75A800F823B45D","name":"尖東站 K11 MUSEA (YT216)"},{"seq":22,"stop_id":"C175ACB534E8C15C","name":"尖沙咀麼地道 (YT221)"},{"seq":23,"stop_id":"4139F73177AF267D","name":"加連威老道 (YT223)"},{"seq":24,"stop_id":"E45CFAB2E6E4C8FE","name":"香港理工大學 (YT230)"},{"seq":25,"stop_id":"4E0D4AA802766AA3","name":"尖沙咀東總站 (YT934)"}],"26_inbound_1":[{"seq":1,"stop_id":"4E0D4AA802766AA3","name":"尖沙咀東總站 (YT934)"},{"seq":2,"stop_id":"F2508598F5A43655","name":"香港科學館 (YT621)"},{"seq":3,"stop_id":"3313287185163530","name":"尖沙咀麼地道 (YT623)"},{"seq":4,"stop_id":"89D32777124F4039","name":"尖東站 K11 MUSEA (YT631)"},{"seq":5,"stop_id":"DAE7B6CB56131B50","name":"尖沙咀轉車站 - 海防道 (YT103)"},{"seq":6,"stop_id":"5419928D472EAD8D","name":"栢麗購物大道 (YT112)"},{"seq":7,"stop_id":"100FBBA946264714","name":"柯士甸道 (YT116)"},{"seq":8,"stop_id":"B0668BFF6178BA0B","name":"勞資審裁處 (YT331)"},{"seq":9,"stop_id":"3CB94742E4B5E3E5","name":"衛理道 (YT334)"},{"seq":10,"stop_id":"33033960343A57A8","name":"紅磡山谷道 (HH176)"},{"seq":11,"stop_id":"E37FF663075361FE","name":"紅磡北拱街 (HH178)"},{"seq":12,"stop_id":"4850531F57582BD9","name":"土瓜灣落山道 (KC183)"},{"seq":13,"stop_id":"1C02C4A92902FE95","name":"上鄉道 (KC185)"},{"seq":14,"stop_id":"D28AA79AF38D1601","name":"農圃道 (KC188)"},{"seq":15,"stop_id":"7DF81D14A8CE574E","name":"馬頭角道 (KC197)"},{"seq":16,"stop_id":"3FB80081AB2FF6FB","name":"亞皆老街球場 (KC204)"},{"seq":17,"stop_id":"448C1B8AECA89A6E","name":"九龍城轉車站-富豪東方酒店"},{"seq":18,"stop_id":"92D1BB946193F239","name":"景泰街 (WT298)"},{"seq":19,"stop_id":"D887822D673804CA","name":"彩虹邨 (WT303)"},{"seq":20,"stop_id":"5CD4C77378D3A4AE","name":"牛池灣轉車站-牛池灣街市"},{"seq":21,"stop_id":"F065C32E9D2CB689","name":"牛池灣轉車站-彩雲聖若瑟"},{"seq":22,"stop_id":"9A16E73DC0B9AF6C","name":"白虹樓 (WT232)"},{"seq":23,"stop_id":"7B9D5D0407DB14D3","name":"順利消防局 (KT420)"},{"seq":24,"stop_id":"BF4620B0CD0B9D45","name":"利恒樓 (KT421)"},{"seq":25,"stop_id":"A0AB9A2B2D648FF5","name":"利康樓 (KT161)"},{"seq":26,"stop_id":"484F835517494767","name":"安逸樓 (KT422)"},{"seq":27,"stop_id":"DEDB881565114677","name":"順天總站 (KT853)"}],"27_outbound_1":[{"seq":1,"stop_id":"8F5CE1219E502C17","name":"順天總站 (KT850)"},{"seq":2,"stop_id":"616FE33CD20DB62E","name":"順安邨 (KT176)"},{"seq":3,"stop_id":"CEFFBCE5203D152B","name":"利業樓 (KT179)"},{"seq":4,"stop_id":"8571BCC3A3E4006E","name":"利恒樓 (KT182)"},{"seq":5,"stop_id":"D9896F1A5B7C97C0","name":"順利消防局 (KT183)"},{"seq":6,"stop_id":"3BA9C90738A8600D","name":"白虹樓 (WT615)"},{"seq":7,"stop_id":"29B66F2353388E18","name":"牛池灣轉車站 - 彩虹站 (WT896)"},{"seq":8,"stop_id":"4D9419874306D82F","name":"采頤花園 (WT695)"},{"seq":9,"stop_id":"D625B0997C3DBCFE","name":"譽．港灣 (WT698)"},{"seq":10,"stop_id":"67727D444E2EC42B","name":"九龍城轉車站-富豪東方酒店"},{"seq":11,"stop_id":"3161D898CD89AA38","name":"侯王道 (KC735)"},{"seq":12,"stop_id":"9DBBC71CB1578A87","name":"喇沙利道 (KC738)"},{"seq":13,"stop_id":"312CD2A987AA2773","name":"伯爵街 (KC740)"},{"seq":14,"stop_id":"40E8A4AA35AEB18A","name":"勵德街 (KC742)"},{"seq":15,"stop_id":"55EE74AF2D1A7DAA","name":"拔萃男書院,太子道西 (KC744)"},{"seq":16,"stop_id":"6F5585807DB07812","name":"太子站, 旺角花墟 (MK752)"},{"seq":17,"stop_id":"1876E8AF9A236BAB","name":"旺角道 花園街街市 (MK334)"},{"seq":18,"stop_id":"D01D18C6EB79F84B","name":"嘉道理道 (KC375)"},{"seq":19,"stop_id":"A72D15160CC3AF31","name":"亞皆老街中電 (KC377)"},{"seq":20,"stop_id":"8D5C58075D3C1003","name":"九龍醫院 (KC380)"},{"seq":21,"stop_id":"B0DDF2CD704116C8","name":"醫院管理局 (KC381)"},{"seq":22,"stop_id":"6C1DEF32B8CB92C4","name":"香港眼科醫院 (KC382)"},{"seq":23,"stop_id":"161B32AD4C6996AD","name":"播道醫院 (KC384)"},{"seq":24,"stop_id":"6965D1D655C2DD5F","name":"亞皆老街球場 (KC385)"},{"seq":25,"stop_id":"448C1B8AECA89A6E","name":"九龍城轉車站-富豪東方酒店"},{"seq":26,"stop_id":"92D1BB946193F239","name":"景泰街 (WT298)"},{"seq":27,"stop_id":"D887822D673804CA","name":"彩虹邨 (WT303)"},{"seq":28,"stop_id":"4513DF30B4CBA349","name":"牛池灣轉車站-牛池灣街市"},{"seq":29,"stop_id":"F065C32E9D2CB689","name":"牛池灣轉車站-彩雲聖若瑟"},{"seq":30,"stop_id":"9A16E73DC0B9AF6C","name":"白虹樓 (WT232)"},{"seq":31,"stop_id":"7B9D5D0407DB14D3","name":"順利消防局 (KT420)"},{"seq":32,"stop_id":"BF4620B0CD0B9D45","name":"利恒樓 (KT421)"},{"seq":33,"stop_id":"A0AB9A2B2D648FF5","name":"利康樓 (KT161)"},{"seq":34,"stop_id":"484F835517494767","name":"安逸樓 (KT422)"},{"seq":35,"stop_id":"8F5CE1219E502C17","name":"順天總站 (KT850)"}],"29M_outbound_1":[{"seq":1,"stop_id":"6F3089D5DC872570","name":"順利總站 (KT858)"},{"seq":2,"stop_id":"8571BCC3A3E4006E","name":"利恒樓 (KT182)"},{"seq":3,"stop_id":"D9896F1A5B7C97C0","name":"順利消防局 (KT183)"},{"seq":4,"stop_id":"3BA9C90738A8600D","name":"白虹樓 (WT615)"},{"seq":5,"stop_id":"34BC6DF4457C3BED","name":"牛池灣轉車站 - 彩虹站 (WT894)"},{"seq":6,"stop_id":"3B35E109EB76E70D","name":"牛池灣轉車站-紅萼樓 (WT707)"},{"seq":7,"stop_id":"E41318CD5899D680","name":"新蒲崗四美街 (WT542)"},{"seq":8,"stop_id":"175A11C9B8E170D3","name":"大有街 (WT561)"},{"seq":9,"stop_id":"B8F350418F7013A7","name":"爵祿街 (WT565)"},{"seq":10,"stop_id":"92D1BB946193F239","name":"景泰街 (WT298)"},{"seq":11,"stop_id":"D887822D673804CA","name":"彩虹邨 (WT303)"},{"seq":12,"stop_id":"4513DF30B4CBA349","name":"牛池灣轉車站-牛池灣街市"},{"seq":13,"stop_id":"F065C32E9D2CB689","name":"牛池灣轉車站-彩雲聖若瑟"},{"seq":14,"stop_id":"9A16E73DC0B9AF6C","name":"白虹樓 (WT232)"},{"seq":15,"stop_id":"7B9D5D0407DB14D3","name":"順利消防局 (KT420)"},{"seq":16,"stop_id":"BF4620B0CD0B9D45","name":"利恒樓 (KT421)"},{"seq":17,"stop_id":"A0AB9A2B2D648FF5","name":"利康樓 (KT161)"},{"seq":18,"stop_id":"51ABC48DD7AFB11F","name":"利富樓 (KT178)"},{"seq":19,"stop_id":"6F3089D5DC872570","name":"順利總站 (KT858)"}],"14D_outbound_1":[{"seq":1,"stop_id":"0D8135B0D81F29A1","name":"油塘巴士總站 (LT961)"},{"seq":2,"stop_id":"5309D748976029CB","name":"鯉魚門廣場 (LT601)"},{"seq":3,"stop_id":"3C6DAB7267F9E54F","name":"油塘邨 (LT602)"},{"seq":4,"stop_id":"ADE2159E78D37819","name":"聖安當女書院 (LT603)"},{"seq":5,"stop_id":"2E2AD8BFE00F9FAB","name":"基孝中學 (LT135)"},{"seq":6,"stop_id":"F85916921D80C45A","name":"啟田商場 (LT137)"},{"seq":7,"stop_id":"1472CA699A47EE46","name":"康逸苑 (LT160)"},{"seq":8,"stop_id":"B7082198F517B1E8","name":"興田 (LT161)"},{"seq":9,"stop_id":"93084A14AE624C6F","name":"上秀茂坪 (KT510)"},{"seq":10,"stop_id":"D17050E8964504BB","name":"秀明樓 (KT519)"},{"seq":11,"stop_id":"04DDF4F7F1C74876","name":"秀富樓 (KT520)"},{"seq":12,"stop_id":"1743738D38C82831","name":"中秀茂坪總站 (KT976)"},{"seq":13,"stop_id":"3ABDE54448D1E059","name":"秀樂樓 (KT523)"},{"seq":14,"stop_id":"0511A6AC2CBC9A21","name":"寧波第二中學 (KT170)"},{"seq":15,"stop_id":"2CFCDB6EA2892637","name":"順天總站 (KT851)"},{"seq":16,"stop_id":"616FE33CD20DB62E","name":"順安邨 (KT176)"},{"seq":17,"stop_id":"CEFFBCE5203D152B","name":"利業樓 (KT179)"},{"seq":18,"stop_id":"8571BCC3A3E4006E","name":"利恒樓 (KT182)"},{"seq":19,"stop_id":"D9896F1A5B7C97C0","name":"順利消防局 (KT183)"},{"seq":20,"stop_id":"3BA9C90738A8600D","name":"白虹樓 (WT615)"},{"seq":21,"stop_id":"54733D2BB5BE7121","name":"牛池灣轉車站 - 彩虹站 (WT895)"},{"seq":22,"stop_id":"9241EFF6313B41E8","name":"彩虹轉車站 - 彩虹總站 (WT996)"}],"14H_outbound_1":[{"seq":1,"stop_id":"D024B008AB77435B","name":"油塘巴士總站 (LT962)"},{"seq":2,"stop_id":"40FF132FB8E77051","name":"高怡邨 (LT115)"},{"seq":3,"stop_id":"B08CA4B3CDCF142A","name":"高俊苑 (LT116)"},{"seq":4,"stop_id":"CF18D17DE7B40350","name":"金栢閣 (LT120)"},{"seq":5,"stop_id":"ECBD286CC9ED9549","name":"龍栢閣 (LT121)"},{"seq":6,"stop_id":"DEB36380E32DCD53","name":"康雅苑 (LT123)"},{"seq":7,"stop_id":"FA246A7F26F12EDD","name":"德康樓 (LT125)"},{"seq":8,"stop_id":"5ACB622335DF5AE7","name":"德敬樓 (LT127)"},{"seq":9,"stop_id":"DA29C9192B8D12DC","name":"康逸苑 (LT502)"},{"seq":10,"stop_id":"6491C7B3E4DAD76D","name":"啟旺樓 (LT520)"},{"seq":11,"stop_id":"1E27754A297197EC","name":"啟田商場 (LT533)"},{"seq":12,"stop_id":"6C6B36F7550907CE","name":"藍田站 (LT608)"},{"seq":13,"stop_id":"5B04604E989BBDF0","name":"觀塘法院 (KT612)"},{"seq":14,"stop_id":"F36DEB05146E271D","name":"觀塘站 (KT622)"},{"seq":15,"stop_id":"B314CF2831F9C5F1","name":"和樂邨 (KT258)"},{"seq":16,"stop_id":"3093477EA64DDA89","name":"祥和苑 (KT261)"},{"seq":17,"stop_id":"E61F9EA5AEE1EFE0","name":"聯合醫院 (KT262)"},{"seq":18,"stop_id":"0511A6AC2CBC9A21","name":"寧波第二中學 (KT170)"},{"seq":19,"stop_id":"6E113B962058A553","name":"順天總站 (KT852)"},{"seq":20,"stop_id":"62F953A6FC5652BE","name":"順安邨 (KT175)"},{"seq":21,"stop_id":"10A6BEC26CE598E8","name":"利業樓 (KT181)"},{"seq":22,"stop_id":"8571BCC3A3E4006E","name":"利恒樓 (KT182)"},{"seq":23,"stop_id":"927CE95D5C98C195","name":"順利消防局 (KT184)"},{"seq":24,"stop_id":"F1B974EDD8C15DBC","name":"安頌樓 (KT165)"},{"seq":25,"stop_id":"DD5B5646768C5F09","name":"聯合醫院 (KT531)"},{"seq":26,"stop_id":"6CF34EF02CDBE26B","name":"祥和苑 (KT534)"},{"seq":27,"stop_id":"C6E63C45FF2EA573","name":"寶珮苑 (KT561)"},{"seq":28,"stop_id":"3673A01280621EC2","name":"翠梓樓 (KT562)"},{"seq":29,"stop_id":"144E9479168069DD","name":"觀塘游泳池 (KT361)"},{"seq":30,"stop_id":"F36C1B3AC57D96FA","name":"藍田站 (落客站) (LT900)"},{"seq":31,"stop_id":"B1B0E08245C0FC15","name":"藍田站 (LT908)"},{"seq":32,"stop_id":"2E2AD8BFE00F9FAB","name":"基孝中學 (LT135)"},{"seq":33,"stop_id":"3CB982FBC9E50AAA","name":"康田苑 (LT136)"},{"seq":34,"stop_id":"F85916921D80C45A","name":"啟田商場 (LT137)"},{"seq":35,"stop_id":"1EF0671DB830C59D","name":"啟田邨 (LT145)"},{"seq":36,"stop_id":"3144CE950CE29C80","name":"藍田公園 (LT510)"},{"seq":37,"stop_id":"543FD8B6C65D1C4C","name":"德樂樓 (LT511)"},{"seq":38,"stop_id":"316BB2C947568585","name":"德隆樓 (LT512)"},{"seq":39,"stop_id":"3E862B92873F5811","name":"廣靖樓 (LT513)"},{"seq":40,"stop_id":"57A0D4D6D4D57497","name":"廣田商場 (LT514)"},{"seq":41,"stop_id":"0F9D050D4229C0F7","name":"高俊苑 (LT381)"},{"seq":42,"stop_id":"19171A194D7507D5","name":"高怡邨 (LT383)"},{"seq":43,"stop_id":"D024B008AB77435B","name":"油塘巴士總站 (LT962)"}],"26M_outbound_1":[{"seq":1,"stop_id":"2CFA2F3EA6304C56","name":"彩虹轉車站 - 彩虹總站 (WT993)"},{"seq":2,"stop_id":"4513DF30B4CBA349","name":"牛池灣轉車站-牛池灣街市"},{"seq":3,"stop_id":"F065C32E9D2CB689","name":"牛池灣轉車站-彩雲聖若瑟"},{"seq":4,"stop_id":"9A16E73DC0B9AF6C","name":"白虹樓 (WT232)"},{"seq":5,"stop_id":"942084E1090F193E","name":"利明樓"},{"seq":6,"stop_id":"A0AB9A2B2D648FF5","name":"利康樓 (KT161)"},{"seq":7,"stop_id":"484F835517494767","name":"安逸樓 (KT422)"},{"seq":8,"stop_id":"6E113B962058A553","name":"順天總站 (KT852)"},{"seq":9,"stop_id":"E308599CF719FE37","name":"天韻樓 (KT430)"},{"seq":10,"stop_id":"6765DD696FA8BF8D","name":"寧波第二中學 (KT504)"},{"seq":11,"stop_id":"DD5B5646768C5F09","name":"聯合醫院 (KT531)"},{"seq":12,"stop_id":"7ABD55FC15C048F0","name":"秀雅道遊樂場 (KT532)"},{"seq":13,"stop_id":"073C44CE5FF431BC","name":"和樂邨 (KT535)"},{"seq":14,"stop_id":"B5CB3F0D26BBBD03","name":"協和街, 裕民坊 (KT538)"},{"seq":15,"stop_id":"B314CF2831F9C5F1","name":"和樂邨 (KT258)"},{"seq":16,"stop_id":"E61F9EA5AEE1EFE0","name":"聯合醫院 (KT262)"},{"seq":17,"stop_id":"0511A6AC2CBC9A21","name":"寧波第二中學 (KT170)"},{"seq":18,"stop_id":"2CFCDB6EA2892637","name":"順天總站 (KT851)"},{"seq":19,"stop_id":"616FE33CD20DB62E","name":"順安邨 (KT176)"},{"seq":20,"stop_id":"CEFFBCE5203D152B","name":"利業樓 (KT179)"},{"seq":21,"stop_id":"8571BCC3A3E4006E","name":"利恒樓 (KT182)"},{"seq":22,"stop_id":"D9896F1A5B7C97C0","name":"順利消防局 (KT183)"},{"seq":23,"stop_id":"3BA9C90738A8600D","name":"白虹樓 (WT615)"},{"seq":24,"stop_id":"54733D2BB5BE7121","name":"牛池灣轉車站 - 彩虹站 (WT895)"},{"seq":25,"stop_id":"917DF4AF0ED7B258","name":"牛池灣轉車站-丹鳳樓 (WT701)"},{"seq":26,"stop_id":"2CFA2F3EA6304C56","name":"彩虹轉車站 - 彩虹總站 (WT993)"}],"26X_outbound_1":[{"seq":1,"stop_id":"DEDB881565114677","name":"順天總站 (KT853)"},{"seq":2,"stop_id":"581AAE2C80571C37","name":"順安邨 (KT177)"},{"seq":3,"stop_id":"C21FA8D54031D7FF","name":"利業樓 (KT180)"},{"seq":4,"stop_id":"8571BCC3A3E4006E","name":"利恒樓 (KT182)"},{"seq":5,"stop_id":"D9896F1A5B7C97C0","name":"順利消防局 (KT183)"},{"seq":6,"stop_id":"3BA9C90738A8600D","name":"白虹樓 (WT615)"},{"seq":7,"stop_id":"29B66F2353388E18","name":"牛池灣轉車站 - 彩虹站 (WT896)"},{"seq":8,"stop_id":"5CCBD9A6B58BF20D","name":"九龍佑寧堂 (YT670)"},{"seq":9,"stop_id":"A37F8CF766FCF9F3","name":"尖沙咀德成街 (YT556)"},{"seq":10,"stop_id":"1DEB855D55528B03","name":"金馬倫道,清真寺 (YT560)"},{"seq":11,"stop_id":"D2217D7746597D10","name":"尖沙咀轉車站 - 中間道 (YT563)"},{"seq":12,"stop_id":"5D75A800F823B45D","name":"尖東站 K11 MUSEA (YT216)"},{"seq":13,"stop_id":"C175ACB534E8C15C","name":"尖沙咀麼地道 (YT221)"},{"seq":14,"stop_id":"4139F73177AF267D","name":"加連威老道 (YT223)"},{"seq":15,"stop_id":"E45CFAB2E6E4C8FE","name":"香港理工大學 (YT230)"},{"seq":16,"stop_id":"4E0D4AA802766AA3","name":"尖沙咀東總站 (YT934)"}],"27X_outbound_1":[{"seq":1,"stop_id":"8F5CE1219E502C17","name":"順天總站 (KT850)"},{"seq":2,"stop_id":"616FE33CD20DB62E","name":"順安邨 (KT176)"},{"seq":3,"stop_id":"CEFFBCE5203D152B","name":"利業樓 (KT179)"},{"seq":4,"stop_id":"8571BCC3A3E4006E","name":"利恒樓 (KT182)"},{"seq":5,"stop_id":"D9896F1A5B7C97C0","name":"順利消防局 (KT183)"},{"seq":6,"stop_id":"3BA9C90738A8600D","name":"白虹樓 (WT615)"},{"seq":7,"stop_id":"0A92C86D7158856F","name":"彩興苑 (KT141)"},{"seq":8,"stop_id":"ED5554C57CF0061C","name":"麗晶花園 (WT692)"},{"seq":9,"stop_id":"4D9419874306D82F","name":"采頤花園 (WT695)"},{"seq":10,"stop_id":"D625B0997C3DBCFE","name":"譽．港灣 (WT698)"},{"seq":11,"stop_id":"D7EDDEA5A942843B","name":"九龍城警署 (KC607)"},{"seq":12,"stop_id":"2F3C9727D9186DAB","name":"雅麗居 (KC609)"},{"seq":13,"stop_id":"300D1812E3A085C3","name":"太平道 (KC615)"},{"seq":14,"stop_id":"3DE979ACCBF8988B","name":"旺角站 (MK623)"},{"seq":15,"stop_id":"5CA7841E84D52C8A","name":"旺角街市, 地區康健中心 (MK627)"},{"seq":16,"stop_id":"22138E6C8051FDBD","name":"銘基書院 (MK631)"},{"seq":17,"stop_id":"3B8B261C1DA409BD","name":"帝柏海灣 奧海城 (MK633)"},{"seq":18,"stop_id":"BC280265AF2BEB66","name":"奧運站巴士總站 (MK924)"}],"290A_outbound_1":[{"seq":1,"stop_id":"21AD38E162AE7E57","name":"彩明總站 (TK915)"},{"seq":2,"stop_id":"9D208FE6B2CFD450","name":"唐明街公園 (TK107)"},{"seq":3,"stop_id":"20FDDA894D722F88","name":"將軍澳廣場 (TK122)"},{"seq":4,"stop_id":"6C3F6AF77695CAE9","name":"銀澳路 新寶城 (TK390)"},{"seq":5,"stop_id":"7E035AF141396291","name":"培成路 (TK254)"},{"seq":6,"stop_id":"D5E1A3D34328F867","name":"厚德邨 (TK427)"},{"seq":7,"stop_id":"1FAA805BF1635668","name":"景林邨 (TK436)"},{"seq":8,"stop_id":"3047EC57E5BC5FA6","name":"欣景路 新都城 (TK455)"},{"seq":9,"stop_id":"AC7D60B1E5251638","name":"梁潔華小學 (TK468)"},{"seq":10,"stop_id":"45852CCBB75F4A68","name":"怡心園 (TK129)"},{"seq":11,"stop_id":"68799FD9ECBF50B1","name":"翠林邨 (TK450)"},{"seq":12,"stop_id":"4A84482F3A54E4CC","name":"康盛花園 (TK451)"},{"seq":13,"stop_id":"70A7D4C9EDA6D50A","name":"馬游塘村 (KT457)"},{"seq":14,"stop_id":"EA2CFF27310EAEC3","name":"寶達邨轉車站 (KT459)"},{"seq":15,"stop_id":"93084A14AE624C6F","name":"上秀茂坪 (KT510)"},{"seq":16,"stop_id":"D17050E8964504BB","name":"秀明樓 (KT519)"},{"seq":17,"stop_id":"04DDF4F7F1C74876","name":"秀富樓 (KT520)"},{"seq":18,"stop_id":"BF08F9C08BB54A2B","name":"秀茂坪商場 (KT522)"},{"seq":19,"stop_id":"3ABDE54448D1E059","name":"秀樂樓 (KT523)"},{"seq":20,"stop_id":"2CFCDB6EA2892637","name":"順天總站 (KT851)"},{"seq":21,"stop_id":"616FE33CD20DB62E","name":"順安邨 (KT176)"},{"seq":22,"stop_id":"CEFFBCE5203D152B","name":"利業樓 (KT179)"},{"seq":23,"stop_id":"8571BCC3A3E4006E","name":"利恒樓 (KT182)"},{"seq":24,"stop_id":"D9896F1A5B7C97C0","name":"順利消防局 (KT183)"},{"seq":25,"stop_id":"58611212645F0AB1","name":"白虹樓 (WT614)"},{"seq":26,"stop_id":"29B66F2353388E18","name":"牛池灣轉車站 - 彩虹站 (WT896)"},{"seq":27,"stop_id":"58584BC1AC41723C","name":"牛池灣轉車站-紅萼樓 (WT704)"},{"seq":28,"stop_id":"62A1C8EFAC876BDB","name":"黃大仙轉車站-黃大仙廟 (WT714)"},{"seq":29,"stop_id":"65842E04BFE99758","name":"永光書院 (WT722)"},{"seq":30,"stop_id":"29A62A8FE112766B","name":"豐力樓 (SS730)"},{"seq":31,"stop_id":"9751EE79B103C9B8","name":"畢架山花園 (SS732)"},{"seq":32,"stop_id":"246ECB0F3B94855D","name":"葵涌道荔景邨 (KW102)"},{"seq":33,"stop_id":"D17DA49D5EFC6DD4","name":"葵芳廣場 (KW103)"},{"seq":34,"stop_id":"ABA04608DBB7C351","name":"光輝圍 (KW111)"},{"seq":35,"stop_id":"40A8EA2850B0979B","name":"葵涌健全街 (KW129)"},{"seq":36,"stop_id":"B943DBEE65B0B18F","name":"大窩口轉車站-大窩口站 (KW131)"},{"seq":37,"stop_id":"5AF593F7A11180E2","name":"荃灣眾安街 (TW139)"},{"seq":38,"stop_id":"92A8281D80524F78","name":"荃灣大河道 (TW290)"},{"seq":39,"stop_id":"716D84D1B7EA256E","name":"荃灣西站巴士總站(落客站)"}],"42_outbound_1":[{"seq":1,"stop_id":"97EDE39CDE116A94","name":"長康巴士總站 (TY971)"},{"seq":2,"stop_id":"CC2886532E162A85","name":"長康邨康順樓 (TY310)"},{"seq":3,"stop_id":"AAAF715A5DC3A7CD","name":"青盛苑 (TY318)"},{"seq":4,"stop_id":"3406C1A9DA760403","name":"長青巴士總站 (TY322)"},{"seq":5,"stop_id":"6E24D2D895228AC3","name":"長青邨青槐樓 (TY324)"},{"seq":6,"stop_id":"CA60760D2303E6D0","name":"長青邨青桃樓 (TY332)"},{"seq":7,"stop_id":"DE99B27530D1A3C4","name":"葵涌葵泰路 (KW190)"},{"seq":8,"stop_id":"A25160BA84EE09F7","name":"葵青交滙處 (KW191)"},{"seq":9,"stop_id":"2111E15DA3CEFEC4","name":"葵青劇院 (KW184)"},{"seq":10,"stop_id":"952DD8539E6DAC75","name":"聯接街 (KW435)"},{"seq":11,"stop_id":"E3AB394138EDE467","name":"荔景站 (KW436)"},{"seq":12,"stop_id":"F275A85A9CF9BBC4","name":"荔景邨樂景樓 (KW437)"},{"seq":13,"stop_id":"FA343B97309B84B4","name":"晨輝學校 (KW438)"},{"seq":14,"stop_id":"E7E5E3C1F761966F","name":"葵涌醫院 (KW439)"},{"seq":15,"stop_id":"062B0243536F0816","name":"瑪嘉烈醫院 (KW440)"},{"seq":16,"stop_id":"13B39CD775874ED9","name":"清麗苑 (KW441)"},{"seq":17,"stop_id":"08A97AD10693B841","name":"清麗商場 (KW442)"},{"seq":18,"stop_id":"42E5CC0772775C7E","name":"九華徑 (KW443)"},{"seq":19,"stop_id":"1D75CC7D0B671EEE","name":"華荔邨 (KW444)"},{"seq":20,"stop_id":"79BB89DA868D93CF","name":"荔灣道 (SS450)"},{"seq":21,"stop_id":"BE47845FF3E717FC","name":"蘭秀道 (SS452)"},{"seq":22,"stop_id":"854BC3A8D4DE6AA9","name":"美孚轉車站 (SS462)"},{"seq":23,"stop_id":"ACA7282A66D0A29B","name":"大南西街 (SS630)"},{"seq":24,"stop_id":"408F72CA87CC73A6","name":"專業教育學院-黃克競分校"},{"seq":25,"stop_id":"549013DC1C3A2A44","name":"麗翠苑 (SS632)"},{"seq":26,"stop_id":"ADA4B4F4B604885B","name":"麗閣邨麗蘿樓 (SS633)"},{"seq":27,"stop_id":"0D7B059BFF6CA5E2","name":"深水埗桂林街 (SS635)"},{"seq":28,"stop_id":"8D386F5D210C3439","name":"石硤尾街 (SS642)"},{"seq":29,"stop_id":"A80D9E7FA0C070E6","name":"大南街 (MK230)"},{"seq":30,"stop_id":"32CCEDBCC9EAAA9E","name":"白楊街 (MK231)"},{"seq":31,"stop_id":"2751781A6F757C5D","name":"警察體育遊樂會 (MK233)"},{"seq":32,"stop_id":"6045969736940272","name":"花墟公園 (MK234)"},{"seq":33,"stop_id":"F851B0B122F38CCC","name":"明愛太子宿舍 (KC240)"},{"seq":34,"stop_id":"2FA93329F924968F","name":"碧華花園 (KC244)"},{"seq":35,"stop_id":"1E58DF8CAD59712E","name":"聖德肋撒醫院 (KC245)"},{"seq":36,"stop_id":"12B08A64756B780B","name":"侯王道 (KC253)"},{"seq":37,"stop_id":"448C1B8AECA89A6E","name":"九龍城轉車站-富豪東方酒店"},{"seq":38,"stop_id":"92D1BB946193F239","name":"景泰街 (WT298)"},{"seq":39,"stop_id":"D887822D673804CA","name":"彩虹邨 (WT303)"},{"seq":40,"stop_id":"E7116B44D9E9393A","name":"牛池灣轉車站-彩雲聖若瑟"},{"seq":41,"stop_id":"9A16E73DC0B9AF6C","name":"白虹樓 (WT232)"},{"seq":42,"stop_id":"B932B24E7F3C5677","name":"基順學校"},{"seq":43,"stop_id":"A0AB9A2B2D648FF5","name":"利康樓 (KT161)"},{"seq":44,"stop_id":"51ABC48DD7AFB11F","name":"利富樓 (KT178)"},{"seq":45,"stop_id":"62BBCD4CDBFDC8A5","name":"順利總站 (KT860)"}],"42_inbound_1":[{"seq":1,"stop_id":"62BBCD4CDBFDC8A5","name":"順利總站 (KT860)"},{"seq":2,"stop_id":"8571BCC3A3E4006E","name":"利恒樓 (KT182)"},{"seq":3,"stop_id":"D9896F1A5B7C97C0","name":"順利消防局 (KT183)"},{"seq":4,"stop_id":"3BA9C90738A8600D","name":"白虹樓 (WT615)"},{"seq":5,"stop_id":"F6703708A375C67E","name":"牛池灣轉車站 - 彩虹站 (WT893)"},{"seq":6,"stop_id":"4D9419874306D82F","name":"采頤花園 (WT695)"},{"seq":7,"stop_id":"D625B0997C3DBCFE","name":"譽．港灣 (WT698)"},{"seq":8,"stop_id":"B5BAED26BD56AC16","name":"九龍城轉車站-富豪東方酒店"},{"seq":9,"stop_id":"121EAC1C0D7D77BE","name":"福佬村道 (KC737)"},{"seq":10,"stop_id":"CC6ED4BD466C1CB0","name":"喇沙利道 (KC739)"},{"seq":11,"stop_id":"0A72152D4873A5C7","name":"聖德肋撒堂 (KC741)"},{"seq":12,"stop_id":"55EE74AF2D1A7DAA","name":"拔萃男書院,太子道西 (KC744)"},{"seq":13,"stop_id":"65B934D14EA190F1","name":"協和小學, MOKO (MK750)"},{"seq":14,"stop_id":"F7CAA2D4FF9D61F7","name":"太子站, 旺角花墟 (MK751)"},{"seq":15,"stop_id":"DEB8D7D95E7D528A","name":"運動場道 (MK310)"},{"seq":16,"stop_id":"D3C41BB36EC805E0","name":"石硤尾街休憩花園 (SS332)"},{"seq":17,"stop_id":"A8C595F1E33B5DEF","name":"北河街 (SS335)"},{"seq":18,"stop_id":"F75C1A9AFDBB52F1","name":"怡靖苑 (SS215)"},{"seq":19,"stop_id":"04FC6E130D4953F4","name":"長沙灣遊樂場 (SS227)"},{"seq":20,"stop_id":"B294A8638290F5C2","name":"長沙灣徑 (SS235)"},{"seq":21,"stop_id":"70349D91EC82AFE1","name":"美孚轉車站 (SS318)"},{"seq":22,"stop_id":"E35B5F1B80E085E6","name":"蘭秀道 (SS270)"},{"seq":23,"stop_id":"A3F6D2CA9135A988","name":"荔灣道 (SS275)"},{"seq":24,"stop_id":"375D37F2AF5D762A","name":"九華徑 (KW280)"},{"seq":25,"stop_id":"37A4D07D7179CE76","name":"荔灣花園 (KW281)"},{"seq":26,"stop_id":"C979915CB2F4A35C","name":"清麗商場 (KW282)"},{"seq":27,"stop_id":"94612276CB142F93","name":"清麗苑 (KW283)"},{"seq":28,"stop_id":"24BB2F5E5721E970","name":"瑪嘉烈醫院 (KW284)"},{"seq":29,"stop_id":"0E7645CCF6AA3558","name":"葵涌醫院 (KW285)"},{"seq":30,"stop_id":"422BD13B241CCD5B","name":"救世軍荔景院 (KW286)"},{"seq":31,"stop_id":"AD326AC36444B948","name":"荔景邨樂景樓 (KW287)"},{"seq":32,"stop_id":"044D07048F45F915","name":"荔景站 (KW288)"},{"seq":33,"stop_id":"6E6EBC9D1AF2DA52","name":"荔景邨日景樓 (KW289)"},{"seq":34,"stop_id":"F273E57C36913893","name":"葵青劇院 (KW550)"},{"seq":35,"stop_id":"D52D3F3FB66EF61A","name":"葵青交滙處 (KW560)"},{"seq":36,"stop_id":"6DF1AF2871D4B7D9","name":"長青邨青桃樓 (TY101)"},{"seq":37,"stop_id":"196A1E44C305C174","name":"美景花園 (TY111)"},{"seq":38,"stop_id":"BDE0F1679E1C8ABF","name":"長青巴士總站 (TY113)"},{"seq":39,"stop_id":"13458794A52910B0","name":"青盛苑 (TY115)"},{"seq":40,"stop_id":"97EDE39CDE116A94","name":"長康巴士總站 (TY971)"}],"91_outbound_1":[{"seq":1,"stop_id":"8DDA1226E5C7F144","name":"清水灣總站 (SK961)"},{"seq":2,"stop_id":"55950D2113A80E72","name":"清水灣第一灘 (SK480)"},{"seq":3,"stop_id":"31C7E8E4A4626178","name":"大環頭路 (SK481)"},{"seq":4,"stop_id":"F7EE3594526686DB","name":"相思灣 (SK490)"},{"seq":5,"stop_id":"80D6E715DA51CA02","name":"兩塊田 (SK491)"},{"seq":6,"stop_id":"225FBE9D52AD0ED2","name":"下洋 (SK492)"},{"seq":7,"stop_id":"2A62A6244F598604","name":"上洋 (SK493)"},{"seq":8,"stop_id":"0CF0429A4BEE8F4C","name":"檳榔灣 (SK494)"},{"seq":9,"stop_id":"F937BECF8C53EEF3","name":"五塊田 (SK495)"},{"seq":10,"stop_id":"EA5AF653CB5975F8","name":"孟公屋 (SK496)"},{"seq":11,"stop_id":"7BFE214AF3036D86","name":"碧沙路 (SK497)"},{"seq":12,"stop_id":"5B4EE863B18FED7D","name":"銀線灣廣場 (SK498)"},{"seq":13,"stop_id":"8353D95EF9733231","name":"坑口道 (SK499)"},{"seq":14,"stop_id":"1D7BC9F560C3B0CC","name":"影業路 (SK500)"},{"seq":15,"stop_id":"FDA55F46899FC5D0","name":"銀影路 (SK501)"},{"seq":16,"stop_id":"B002CEF0DBC568F5","name":"香港科技大學(南) (SK950)"},{"seq":17,"stop_id":"A79D111EB948F013","name":"大埔仔 (SK502)"},{"seq":18,"stop_id":"298847E9FCC94FD9","name":"大埔仔坳 (SK503)"},{"seq":19,"stop_id":"86DF43320DF0F596","name":"打鼓嶺新村 (SK504)"},{"seq":20,"stop_id":"36F2D783428B6307","name":"壁屋 (SK505)"},{"seq":21,"stop_id":"EBA1C02EA9906C96","name":"白石窩 (SK506)"},{"seq":22,"stop_id":"47B8E78BAB4FEB5D","name":"井欄樹 (SK507)"},{"seq":23,"stop_id":"0BE9DE9BA299E126","name":"龍窩村　　　 (SK508)"},{"seq":24,"stop_id":"4D55F6240E2AAFB8","name":"安達臣道 (SK509)"},{"seq":25,"stop_id":"C58FCEE9339E5319","name":"德望學校 (WT610)"},{"seq":26,"stop_id":"1EF5FAB9266BD6C8","name":"彩雲邨 (WT987)"},{"seq":27,"stop_id":"5D77A5CBE41F2984","name":"牛池灣轉車站 - 彩虹站 (WT891)"},{"seq":28,"stop_id":"18F3C20116BFE83D","name":"牛池灣轉車站-紅萼樓 (WT705)"},{"seq":29,"stop_id":"332F374B6CB17C57","name":"彩虹轉車站 - 錦雲樓 (WT371)"},{"seq":30,"stop_id":"AFB03B10416E2199","name":"志蓮淨苑 (WT131)"},{"seq":31,"stop_id":"0B41334D66E94275","name":"鑽石山站巴士總站 (WT963)"}],"91M_outbound_1":[{"seq":1,"stop_id":"796CAA794D4DEBE8","name":"寶林總站 (TK930)"},{"seq":2,"stop_id":"FC42DCBDC3AB0B6F","name":"欣景路 新都城 (TK145)"},{"seq":3,"stop_id":"22E2678081E88368","name":"景林邨 (TK206)"},{"seq":4,"stop_id":"7613538D58A9C452","name":"厚德邨 (TK215)"},{"seq":5,"stop_id":"9B0382206D441221","name":"重華路 東港城 (TK232)"},{"seq":6,"stop_id":"29A07F043B4D5919","name":"坑口站 (TK941)"},{"seq":7,"stop_id":"87CD68EAD90352E9","name":"富寧花園 (TK218)"},{"seq":8,"stop_id":"78AE8E07840D1CF7","name":"將軍澳醫院 (TK260)"},{"seq":9,"stop_id":"5146FB43555E8310","name":"聖雲仙天主堂 (TK261)"},{"seq":10,"stop_id":"7297BDBB8A758AD5","name":"水邊村 (TK262)"},{"seq":11,"stop_id":"1D7BC9F560C3B0CC","name":"影業路 (SK500)"},{"seq":12,"stop_id":"FDA55F46899FC5D0","name":"銀影路 (SK501)"},{"seq":13,"stop_id":"B002CEF0DBC568F5","name":"香港科技大學(南) (SK950)"},{"seq":14,"stop_id":"A79D111EB948F013","name":"大埔仔 (SK502)"},{"seq":15,"stop_id":"298847E9FCC94FD9","name":"大埔仔坳 (SK503)"},{"seq":16,"stop_id":"86DF43320DF0F596","name":"打鼓嶺新村 (SK504)"},{"seq":17,"stop_id":"36F2D783428B6307","name":"壁屋 (SK505)"},{"seq":18,"stop_id":"EBA1C02EA9906C96","name":"白石窩 (SK506)"},{"seq":19,"stop_id":"47B8E78BAB4FEB5D","name":"井欄樹 (SK507)"},{"seq":20,"stop_id":"0BE9DE9BA299E126","name":"龍窩村　　　 (SK508)"},{"seq":21,"stop_id":"4D55F6240E2AAFB8","name":"安達臣道 (SK509)"},{"seq":22,"stop_id":"C58FCEE9339E5319","name":"德望學校 (WT610)"},{"seq":23,"stop_id":"1EF5FAB9266BD6C8","name":"彩雲邨 (WT987)"},{"seq":24,"stop_id":"5D77A5CBE41F2984","name":"牛池灣轉車站 - 彩虹站 (WT891)"},{"seq":25,"stop_id":"18F3C20116BFE83D","name":"牛池灣轉車站-紅萼樓 (WT705)"},{"seq":26,"stop_id":"332F374B6CB17C57","name":"彩虹轉車站 - 錦雲樓 (WT371)"},{"seq":27,"stop_id":"7ABFD50CAA98A9D1","name":"新蒲崗大有街 (WT545)"},{"seq":28,"stop_id":"A0FDF34B2D278750","name":"鳳德商場 (WT408)"},{"seq":29,"stop_id":"53889000AA9C33E2","name":"鑽石山站巴士總站 (WT964)"}],"92_outbound_1":[{"seq":1,"stop_id":"F4CE5E8FCC1B2F59","name":"西貢巴士總站 (SK902)"},{"seq":2,"stop_id":"60E02B7ACBBB80E8","name":"西貢大會堂 (SK450)"},{"seq":3,"stop_id":"3CF260D7083B411D","name":"翠塘花園 (SK451)"},{"seq":4,"stop_id":"9458BE33A2B7B934","name":"菠蘿輋 (SK452)"},{"seq":5,"stop_id":"CB4F0A350A26D033","name":"北港 (SK453)"},{"seq":6,"stop_id":"1741D103CB826E93","name":"大涌口 (SK454)"},{"seq":7,"stop_id":"4823D6EFB3722E64","name":"白沙臺 (SK455)"},{"seq":8,"stop_id":"5089C69E080B7A43","name":"白沙灣 (SK456)"},{"seq":9,"stop_id":"1CEB9D13E7279ADA","name":"漁民新村 (SK457)"},{"seq":10,"stop_id":"23DC6B90DC9515D9","name":"北圍 (SK458)"},{"seq":11,"stop_id":"E4C26E79F0D6DC5E","name":"匡湖居 (SK459)"},{"seq":12,"stop_id":"0572B9F0B640DB10","name":"南邊圍 (SK460)"},{"seq":13,"stop_id":"F93E38FD194A9C6C","name":"響鐘村 (SK461)"},{"seq":14,"stop_id":"BE81792B3E788D41","name":"窩美 (SK462)"},{"seq":15,"stop_id":"E03DE379E28F63D8","name":"南圍 (SK463)"},{"seq":16,"stop_id":"B563C75938584FDA","name":"鄭植之中學 (SK470)"},{"seq":17,"stop_id":"86DF43320DF0F596","name":"打鼓嶺新村 (SK504)"},{"seq":18,"stop_id":"36F2D783428B6307","name":"壁屋 (SK505)"},{"seq":19,"stop_id":"EBA1C02EA9906C96","name":"白石窩 (SK506)"},{"seq":20,"stop_id":"47B8E78BAB4FEB5D","name":"井欄樹 (SK507)"},{"seq":21,"stop_id":"0BE9DE9BA299E126","name":"龍窩村　　　 (SK508)"},{"seq":22,"stop_id":"4D55F6240E2AAFB8","name":"安達臣道 (SK509)"},{"seq":23,"stop_id":"C58FCEE9339E5319","name":"德望學校 (WT610)"},{"seq":24,"stop_id":"1EF5FAB9266BD6C8","name":"彩雲邨 (WT987)"},{"seq":25,"stop_id":"5D77A5CBE41F2984","name":"牛池灣轉車站 - 彩虹站 (WT891)"},{"seq":26,"stop_id":"18F3C20116BFE83D","name":"牛池灣轉車站-紅萼樓 (WT705)"},{"seq":27,"stop_id":"332F374B6CB17C57","name":"彩虹轉車站 - 錦雲樓 (WT371)"},{"seq":28,"stop_id":"AFB03B10416E2199","name":"志蓮淨苑 (WT131)"},{"seq":29,"stop_id":"10B8C166D8E60F65","name":"鑽石山站巴士總站 (WT962)"}]}
+};
+
+// GMB 54S stops
+const GMB_54S_STOPS = [{"stop_seq":1,"stop_id":20010135,"name_tc":"利安里, 近順利紀律部隊宿舍","name_sc":"利安里, 近顺利纪律部队宿舍","name_en":"Lee On Lane, near Shun Lee Disciplined Services Quarters"},{"stop_seq":2,"stop_id":20000954,"name_tc":"新清水灣道, 近聖言中學","name_sc":"新清水湾道, 近圣言中学","name_en":"New Clear Water Bay Road, near Sing Yin Secondary School"},{"stop_seq":3,"stop_id":20001117,"name_tc":"清水灣道, 坪石邨鑽石樓外","name_sc":"清水湾道, 坪石邨钻石楼外","name_en":"Clear Water Bay Road, outside Tsuen Shek House, Ping Shek Estate"},{"stop_seq":4,"stop_id":20000985,"name_tc":"龍翔道, 近彩虹邨紅萼樓","name_sc":"龙翔道, 近彩虹邨红萼楼","name_en":"Lung Cheung Road, near Hung Ngok House, Choi Hung Estate"},{"stop_seq":5,"stop_id":20002193,"name_tc":"龍翔道, 近南蓮園池","name_sc":"龙翔道, 近南莲园池","name_en":"LUNG CHEUNG ROAD, near NAN LIAN GARDEN"},{"stop_seq":6,"stop_id":20002740,"name_tc":"正德街, 近黃大仙下邨龍樂樓","name_sc":"正德街, 近黄大仙下邨龙乐楼","name_en":"Ching Tak Street, near Lung Lok House, Lower Wong Tai Sin Estate"},{"stop_seq":7,"stop_id":20000615,"name_tc":"正德街, 近黃大仙下邨龍輝樓","name_sc":"正德街, 近黄大仙下邨龙辉楼","name_en":"Ching Tak Street, near Lung Fai House, Lower Wong Tai Sin Estate"},{"stop_seq":8,"stop_id":20004131,"name_tc":"沙田㘭道, 近睦鄰街遊樂場","name_sc":"沙田㘭道, 近睦邻街游乐场","name_en":"Shatin Pass Road, near Muk Lun Street Playground"},{"stop_seq":9,"stop_id":20007025,"name_tc":"大磡道, 近南蓮園池","name_sc":"大磡道, 近南莲园池","name_en":"Tai Hom Road, near Nan Lian Garden"},{"stop_seq":10,"stop_id":20013561,"name_tc":"龍翔道, 近牛池灣村","name_sc":"龙翔道, 近牛池湾村","name_en":"Lung Cheung Road, near Ngau Chi Wan Village "},{"stop_seq":11,"stop_id":20013562,"name_tc":"清水灣道, 近牛池灣高地抽水站","name_sc":"清水湾道, 近牛池湾高地抽水站","name_en":"Clear Water Bay Road, near Ngau Chi Wan High Level Water Pumping Station "},{"stop_seq":12,"stop_id":20020162,"name_tc":"牛池灣公共交通總站","name_sc":"牛池湾公共交通总站","name_en":"Ngau Chi Wan Public Transport Terminus"},{"stop_seq":13,"stop_id":20000955,"name_tc":"新清水灣道, 近彩雲(一)邨伴月樓 ","name_sc":"新清水湾道, 近彩云(一)村伴月楼","name_en":"New Clear Water Bay Road, Near Boon Yuet House, Choi Wan (I) Estate "},{"stop_seq":14,"stop_id":20000952,"name_tc":"利安道, 近順利邨利恒樓","name_sc":"利安道, 近顺利邨利恒楼","name_en":"Lee On Road, near Lee Hang House, Shun Lee Estate"},{"stop_seq":15,"stop_id":20010135,"name_tc":"利安里, 近香港扶幼會盛德中心學校","name_sc":"利安里, 近香港扶幼会盛德中心学校","name_en":"Lee On Lane, near Society of Boy's Centre Shing Tak Centre School"}];
+
+// ============ STATE ============
+let currentTab = 'fav';
+let etaCache = {};
+let countdownTimer = null;
+let updateCountdown = 30;
+
+// ============ API ============
+
+async function fetchKMB(stopId) {
+  const resp = await fetch(`https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/${stopId}`);
+  const data = await resp.json();
+  return data.data || [];
 }
 
-async function fetchAll() {
-  const kmbResults = STOPS.length > 0 ? await Promise.all(STOPS.map(fetchStopETA)) : [];
-  const gmbResults = GMB_STOPS.length > 0 ? await Promise.all(GMB_STOPS.map(fetchGMBStopETA)) : [];
-  lastData = {};
-  for (const r of kmbResults) {
-    lastData[r.stop.id] = r;
-  }
-  for (const r of gmbResults) {
-    lastData['gmb_' + r.stop.gtfs_id + '_' + r.stop.stop_id] = r;
-  }
-  render();
-  document.getElementById('lastUpdate').textContent =
-    `最後更新：${new Date().toLocaleTimeString('zh-HK', { hour12: false })}`;
+async function fetchGMB(routeId, stopId) {
+  const resp = await fetch(`https://data.etagmb.gov.hk/eta/route-stop/${routeId}/${stopId}`);
+  const data = await resp.json();
+  return data.data || [];
 }
 
-function getCountdown(etaISO) {
-  if (!etaISO) return null;
-  const eta = new Date(etaISO);
+// ============ PROCESS ============
+
+function processKMB(etas) {
+  // Group by route + direction + service_type + dest
+  const groups = {};
+  for (const e of etas) {
+    if (!e.route) continue;
+    const key = `${e.route}|${e.dir}|${e.service_type}|${e.dest_tc}`;
+    if (!groups[key]) {
+      groups[key] = {
+        route: e.route,
+        dir: e.dir,
+        service_type: e.service_type,
+        dest: e.dest_tc,
+        dest_en: e.dest_en,
+        co: e.co || 'KMB',
+        seq: e.seq,
+        etas: [],
+        remarks: new Set(),
+      };
+    }
+    const g = groups[key];
+    if (e.eta) g.etas.push(e.eta);
+    if (e.rmk_tc) g.remarks.add(e.rmk_tc);
+  }
+  // Sort etas, compute minutes
   const now = new Date();
-  const diff = (eta - now) / 1000; // seconds
-  if (diff < 0) return '已到站';
-  const mins = Math.floor(diff / 60);
-  const secs = Math.floor(diff % 60);
-  if (mins === 0) return `${secs}秒`;
-  return `${mins}分${secs}秒`;
+  const result = Object.values(groups);
+  for (const g of result) {
+    g.etas = g.etas.map(eta => {
+      const t = new Date(eta);
+      const mins = Math.round((t - now) / 60000);
+      return { time: eta, mins };
+    }).filter(e => e.mins >= -2).sort((a, b) => a.mins - b.mins);
+    g.remarks = [...g.remarks].join(', ');
+  }
+  return result;
 }
 
-function getEtaClass(minutes) {
-  if (minutes === null || minutes === undefined) return 'late';
-  if (minutes <= 3) return 'soon';
-  if (minutes <= 10) return 'medium';
-  return 'late';
+function processGMB(etas, routeSeq) {
+  // Filter by route_seq
+  const relevant = etas.filter(e => e.route_seq === routeSeq);
+  const result = [];
+  for (const entry of relevant) {
+    const etas = (entry.eta || []).map(e => {
+      const t = new Date(e.timestamp);
+      const mins = Math.round((t - new Date()) / 60000);
+      return { time: e.timestamp, mins, remark: e.remarks_tc };
+    }).filter(e => e.mins >= -2).sort((a, b) => a.mins - b.mins);
+
+    // Split into directions based on stop_seq
+    const isOutbound = entry.stop_seq <= 7;
+    result.push({
+      route: '54S',
+      dir: isOutbound ? '去程' : '回程',
+      dest: isOutbound ? '黃大仙(循環線)' : '順利(循環線)',
+      co: 'GMB',
+      service_type: 1,
+      etas,
+      remarks: '',
+      route_seq: entry.route_seq,
+      stop_seq: entry.stop_seq,
+    });
+  }
+  return result;
 }
 
-function etaToReadable(etaISO) {
-  if (!etaISO) return '—';
-  const d = new Date(etaISO);
-  return d.toLocaleTimeString('zh-HK', { hour: '2-digit', minute: '2-digit', hour12: false });
+// ============ RENDER ============
+
+function etaClass(mins) {
+  if (mins < 0) return 'eta-na';
+  if (mins <= 3) return 'eta-green';
+  if (mins <= 10) return 'eta-yellow';
+  return 'eta-blue';
 }
 
-async function fetchGMBStopETA(stop) {
+function etaText(mins) {
+  if (mins < 0) return '已過';
+  if (mins === 0) return '即將';
+  return `${mins}分`;
+}
+
+function renderRouteRow(r, showStops) {
+  const routeKey = r.route;
+  const isGMB = r.co === 'GMB';
+  const cls = isGMB ? 'gmb' : 'kmb';
+  const icon = isGMB ? '🚐' : '🚌';
+
+  // Find route-stop key
+  let rsKey = null;
+  if (isGMB && r.route === '54S') {
+    rsKey = '54S';
+  } else {
+    const bound = r.dir === 'O' ? 'outbound' : 'inbound';
+    const testKeys = [
+      `${r.route}_${bound}_${r.service_type}`,
+      `${r.route}_${bound}_1`,
+    ];
+    for (const k of testKeys) {
+      if (ROUTE_STOPS[k]) { rsKey = k; break; }
+    }
+  }
+
+  const stopsHtml = rsKey ? renderStops(rsKey, r) : '<div class="stop-item">暫無站點資料</div>';
+
+  const etasHtml = r.etas.length > 0
+    ? r.etas.slice(0, 4).map(e => 
+        `<span class="eta-badge ${etaClass(e.mins)}">${etaText(e.mins)}</span>`
+      ).join('')
+    : `<span class="eta-badge eta-na">${r.remarks || '無班次'}</span>`;
+
+  return `
+    <div class="route" onclick="this.classList.toggle('expanded')">
+      <div class="route-main">
+        <span class="route-num ${cls}">${icon} ${routeKey}</span>
+        <span class="route-dest">→ ${r.dest}</span>
+        <div class="route-etas">${etasHtml}</div>
+        <span class="route-arrow">▶</span>
+      </div>
+      <div class="route-stops">${stopsHtml}</div>
+    </div>`;
+}
+
+function renderStops(rsKey, routeData) {
+  let stops;
+  if (rsKey === '54S') {
+    stops = GMB_54S_STOPS;
+  } else {
+    stops = ROUTE_STOPS[rsKey] || [];
+  }
+
+  // Find current stop seq for highlighting
+  const currentSeq = routeData.seq || 0;
+
+  return stops.map(s => {
+    const seq = s.seq || s.stop_seq || 0;
+    const isCurrent = seq === currentSeq;
+    const name = s.name || s.name_tc || '';
+    const code = s.stop_id ? s.stop_id.slice(0,8) : '';
+    return `
+      <div class="stop-item">
+        <span class="stop-seq ${isCurrent ? 'current' : ''}">${seq}</span>
+        <span class="stop-name">${isCurrent ? '📍 ' : ''}${name}</span>
+        ${code ? `<span class="stop-code">${code}</span>` : ''}
+      </div>`;
+  }).join('');
+}
+
+function renderStation(title, icon, stopIds, gmbConfig, routeFilter) {
+  let allRoutes = [];
+
+  // KMB stops
+  for (const [label, stopId] of Object.entries(stopIds)) {
+    const data = etaCache[stopId] || [];
+    const processed = processKMB(data);
+    for (const r of processed) {
+      r.sourceStop = label;
+      allRoutes.push(r);
+    }
+  }
+
+  // GMB
+  if (gmbConfig) {
+    const data = etaCache['gmb_54s'] || [];
+    const processed = processGMB(data, gmbConfig.routeSeq);
+    for (const r of processed) {
+      r.sourceStop = '54S';
+      allRoutes.push(r);
+    }
+  }
+
+  // Filter if needed
+  if (routeFilter) {
+    allRoutes = allRoutes.filter(r => routeFilter.has(r.route));
+  }
+
+  // Sort: preferred routes first, then by route number
+  const prefOrder = routeFilter ? [...routeFilter] : [];
+  allRoutes.sort((a, b) => {
+    const ai = prefOrder.indexOf(a.route);
+    const bi = prefOrder.indexOf(b.route);
+    if (ai >= 0 && bi >= 0) return ai - bi;
+    if (ai >= 0) return -1;
+    if (bi >= 0) return 1;
+    return a.route.localeCompare(b.route, undefined, {numeric: true});
+  });
+
+  if (allRoutes.length === 0) {
+    return `
+      <div class="station">
+        <div class="station-header">
+          <span class="icon">${icon}</span>
+          <h2>${title}</h2>
+        </div>
+        <div class="station-body"><div class="empty">暫無班次資料</div></div>
+      </div>`;
+  }
+
+  const rows = allRoutes.map(r => renderRouteRow(r, !!routeFilter)).join('');
+
+  return `
+    <div class="station">
+      <div class="station-header">
+        <span class="icon">${icon}</span>
+        <h2>${title}</h2>
+        <span class="badge">${allRoutes.length} 條路線</span>
+      </div>
+      <div class="station-body">${rows}</div>
+    </div>`;
+}
+
+async function refresh() {
+  updateCountdown = 30;
+  document.getElementById('updateTime').textContent = '更新中...';
+
   try {
-    const resp = await fetch(GMB_API_BASE + stop.gtfs_id + '/' + stop.stop_id);
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const json = await resp.json();
-    return { stop, data: json.data || [] };
-  } catch (err) {
-    console.error(`Failed to fetch GMB ${stop.name}:`, err);
-    return { stop, data: null, error: err.message };
+    // Fetch all in parallel
+    const [kt183, kt184, wt298, kt220, gmb54s] = await Promise.all([
+      fetchKMB(STOPS.KT183),
+      fetchKMB(STOPS.KT184),
+      fetchKMB(STOPS.WT298),
+      fetchKMB(STOPS.KT220),
+      fetchGMB(GMB_54S.routeId, GMB_54S.stopId),
+    ]);
+
+    etaCache[STOPS.KT183] = kt183;
+    etaCache[STOPS.KT184] = kt184;
+    etaCache[STOPS.WT298] = wt298;
+    etaCache[STOPS.KT220] = kt220;
+    etaCache['gmb_54s'] = gmb54s;
+
+    render();
+    document.getElementById('updateTime').textContent = 
+      `最後更新：${new Date().toLocaleTimeString('zh-HK', {hour:'2-digit',minute:'2-digit',second:'2-digit'})}`;
+  } catch (e) {
+    document.getElementById('updateTime').textContent = '更新失敗: ' + e.message;
   }
 }
 
 function render() {
-  const dashboard = document.getElementById('dashboard');
-  let html = '';
-
-  for (const stop of STOPS) {
-    const result = lastData[stop.id];
-    const routes = result?.data || [];
-    
-    // Group by route+dest
-    const grouped = {};
-    for (const r of routes) {
-      const key = `${r.route}|||${r.dest_tc}`;
-      if (!grouped[key]) grouped[key] = [];
-      grouped[key].push(r);
-    }
-
-    html += `<div class="stop-card">
-      <div class="stop-header">
-        <h2>🏁 ${stop.name}</h2>
-        <span class="stop-id">${stop.code} · ${stop.dir}</span>
-      </div>
-      <div class="stop-body">`;
-
-    if (routes.length === 0 || result?.error) {
-      html += `<div class="no-routes">
-        ${result?.error ? '⚠️ 讀取失敗：' + result.error : '🎉 暫無巴士到站資料'}
-      </div>`;
-    } else {
-      const entries = Object.entries(grouped);
-      // Sort by nearest ETA
-      entries.sort((a, b) => {
-        const aEta = a[1][0]?.eta ? new Date(a[1][0].eta) : Infinity;
-        const bEta = b[1][0]?.eta ? new Date(b[1][0].eta) : Infinity;
-        return aEta - bEta;
-      });
-
-      for (const [key, items] of entries) {
-        const [route, dest] = key.split('|||');
-        
-        html += `<div class="route-row">
-          <span class="route-badge">${route}</span>
-          <span class="route-dest">往 ${dest}</span>
-          <div class="etas">`;
-
-        for (const item of items) {
-          const etaISO = item.eta;
-          const rmk = item.rmk_tc;
-          const inStop = item.in_stop || false;
-          
-          if (!etaISO && rmk) {
-            // No service
-            html += `<span class="eta-chip no-service">⚠ ${rmk}</span>`;
-          } else if (!etaISO) {
-            html += `<span class="eta-chip late">—</span>`;
-          } else {
-            const etaTime = new Date(etaISO);
-            const now = new Date();
-            const diffMin = Math.floor((etaTime - now) / 60000);
-            const cls = getEtaClass(diffMin);
-            const prefix = inStop ? '🚏 ' : (diffMin <= 0 ? '⚡ ' : '');
-            
-            html += `<span class="eta-chip ${cls}" data-eta="${etaISO}">
-              ${prefix}${etaToReadable(etaISO)}
-              <span class="countdown" data-countdown="${etaISO}">${getCountdown(etaISO)}</span>
-            </span>`;
-          }
-        }
-
-        html += `</div></div>`;
-      }
-    }
-
-    html += `</div></div>`;
-  }
-
-  dashboard.innerHTML = html;
-
-  // === GMB 專線小巴 ===
-  for (const stop of GMB_STOPS) {
-    const key = 'gmb_' + stop.gtfs_id + '_' + stop.stop_id;
-    const result = lastData[key];
-    const routes = result?.data || [];
-
-    html += `<div class="stop-card gmb-card">
-      <div class="stop-header">
-        <h2>🚐 ${stop.name}</h2>
-        <span class="stop-id">${stop.code} · ${stop.dir}</span>
-      </div>
-      <div class="stop-body">`;
-
-    if (routes.length === 0 || result?.error) {
-      html += `<div class="no-routes">
-        ${result?.error ? '⚠️ 讀取失敗：' + result.error : '🎉 暫無到站資料'}
-      </div>`;
-    } else {
-      // Group GMB data by route_seq
-      const bySeq = {};
-      for (const r of routes) {
-        if (!r.enabled) continue;
-        const seq = r.route_seq;
-        if (!bySeq[seq]) bySeq[seq] = [];
-        for (const e of (r.eta || [])) {
-          bySeq[seq].push({
-            timestamp: e.timestamp,
-            remarks_tc: e.remarks_tc,
-            diff: e.diff,
-            stop_seq: r.stop_seq
-          });
-        }
-      }
-
-      // Sort ETAs within each seq by timestamp
-      for (const seq of Object.keys(bySeq)) {
-        bySeq[seq].sort((a, b) => (a.timestamp || '').localeCompare(b.timestamp || ''));
-      }
-
-      const seqLabels = {1: '🚐 去程', 2: '🔙 回程'};
-      for (const seq of Object.keys(bySeq).sort()) {
-        const label = seqLabels[seq] || `序:${seq}`;
-        html += `<div class="route-row">
-          <span class="route-badge">54S</span>
-          <span class="route-dest">${label}</span>
-          <div class="etas">`;
-
-        for (const item of (bySeq[seq] || [])) {
-          const ts = item.timestamp;
-          const rmk = item.remarks_tc;
-          if (!ts) {
-            html += `<span class="eta-chip no-service">—</span>`;
-          } else {
-            const etaTime = new Date(ts);
-            const now = new Date();
-            const diffMin = Math.floor((etaTime - now) / 60000);
-            const cls = getEtaClass(diffMin);
-            const prefix = diffMin <= 0 ? '⚡ ' : '';
-            html += `<span class="eta-chip ${cls}" data-eta="${ts}">
-              ${prefix}${etaToReadable(ts)}
-              <span class="countdown" data-countdown="${ts}">${getCountdown(ts)}</span>
-            </span>`;
-            if (rmk) {
-              html += `<span class="eta-chip no-service">${rmk}</span>`;
-            }
-          }
-        }
-
-        html += `</div></div>`;
-      }
-    }
-
-    html += `</div></div>`;
-  }
-
-  dashboard.innerHTML = html;
-}
-
-// ============================================================
-// 每秒更新倒數
-// ============================================================
-function updateCountdowns() {
-  const elems = document.querySelectorAll('[data-countdown]');
-  for (const el of elems) {
-    const etaISO = el.getAttribute('data-countdown');
-    const cd = getCountdown(etaISO);
-    el.textContent = cd;
-    
-    // Update chip class based on new countdown
-    const chip = el.parentElement;
-    if (chip) {
-      const etaTime = new Date(etaISO);
-      const now = new Date();
-      const diffMin = Math.floor((etaTime - now) / 60000);
-      chip.className = chip.className.replace(/soon|medium|late/g, getEtaClass(diffMin));
-    }
+  const container = document.getElementById('content');
+  
+  if (currentTab === 'fav') {
+    container.innerHTML = renderStation(
+      '順利消防局', '🚏',
+      { KT183: STOPS.KT183, KT184: STOPS.KT184 },
+      GMB_54S,
+      FAV_ROUTES
+    );
+  } else {
+    // All tab — 3 sections
+    container.innerHTML = 
+      '<div style="font-size:0.8rem;color:var(--text2);padding:12px 0 4px;text-align:center">▼ 順利消防局</div>' +
+      renderStation(
+        '順利消防局', '🚏',
+        { KT183: STOPS.KT183, KT184: STOPS.KT184 },
+        GMB_54S,
+        null // no filter — all routes
+      ) +
+      '<div style="font-size:0.8rem;color:var(--text2);padding:12px 0 4px;text-align:center;margin-top:8px">▼ 景泰街站</div>' +
+      renderStation(
+        '景泰街站 (WT298)', '🚏',
+        { WT298: STOPS.WT298 },
+        null,
+        null
+      ) +
+      '<div style="font-size:0.8rem;color:var(--text2);padding:12px 0 4px;text-align:center;margin-top:8px">▼ 敬業街站</div>' +
+      renderStation(
+        '敬業街站 (KT220)', '🚏',
+        { KT220: STOPS.KT220 },
+        null,
+        null
+      );
   }
 }
 
-// ============================================================
-// 啟動
-// ============================================================
-fetchAll();
-setInterval(fetchAll, REFRESH_INTERVAL);
-setInterval(updateCountdowns, COUNTDOWN_REFRESH);
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', (i === 0 && tab === 'fav') || (i === 1 && tab === 'all'));
+  });
+  render();
+}
+
+// Countdown timer
+function startCountdown() {
+  if (countdownTimer) clearInterval(countdownTimer);
+  countdownTimer = setInterval(() => {
+    updateCountdown--;
+    document.getElementById('countdown').textContent = 
+      updateCountdown > 0 ? `${updateCountdown}秒後自動更新` : '';
+    if (updateCountdown <= 0) {
+      updateCountdown = 30;
+      refresh();
+    }
+  }, 1000);
+}
+
+// Init
+refresh().then(startCountdown);
 </script>
 </body>
 </html>
