@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🚌 巴士到站監控 Dashboard</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --card-bg: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-dim: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --orange: #d2991d;
+    --red: #f85149;
+    --purple: #a371f7;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', sans-serif;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  .header {
+    text-align: center;
+    padding: 20px 0 10px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  .header h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), var(--purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .header .meta {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    margin-top: 6px;
+  }
+  .status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 16px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+  }
+  .status-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+    background: var(--green);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+    gap: 16px;
+  }
+  .stop-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+  .stop-card:hover { border-color: var(--accent); }
+  .stop-header {
+    padding: 14px 18px;
+    background: linear-gradient(135deg, #1a1f2e, var(--card-bg));
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .stop-header h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .stop-header .stop-id {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    background: #21262d;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: monospace;
+  }
+  .stop-body { padding: 6px 12px; }
+  .route-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 6px;
+    border-bottom: 1px solid rgba(48, 54, 61, 0.5);
+    gap: 10px;
+    transition: background 0.15s;
+  }
+  .route-row:last-child { border-bottom: none; }
+  .route-row:hover { background: rgba(88, 166, 255, 0.04); border-radius: 6px; }
+  .route-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 52px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    background: #1f2937;
+    color: var(--accent);
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .route-dest {
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    flex-shrink: 0;
+    min-width: 100px;
+  }
+  .etas {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    flex: 1;
+    justify-content: flex-end;
+  }
+  .eta-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .eta-chip.soon { background: rgba(63,185,80,0.12); color: var(--green); border: 1px solid rgba(63,185,80,0.3); }
+  .eta-chip.medium { background: rgba(210,153,29,0.12); color: var(--orange); border: 1px solid rgba(210,153,29,0.3); }
+  .eta-chip.late { background: rgba(88,166,255,0.1); color: var(--accent); border: 1px solid rgba(88,166,255,0.2); }
+  .eta-chip.no-service {
+    background: rgba(139,148,158,0.08);
+    color: var(--text-dim);
+    border: 1px solid rgba(139,148,158,0.15);
+    font-weight: 400;
+    font-size: 0.75rem;
+  }
+  .countdown {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    margin-left: 2px;
+  }
+  .no-routes {
+    text-align: center;
+    padding: 30px;
+    color: var(--text-dim);
+    font-style: italic;
+  }
+  .refresh-btn {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    color: var(--accent);
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+  }
+  .refresh-btn:hover {
+    background: #1f2937;
+    border-color: var(--accent);
+  }
+  @media (max-width: 480px) {
+    .dashboard { grid-template-columns: 1fr; }
+    .etas { justify-content: flex-start; margin-top: 4px; }
+    .route-row { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🚌 巴士到站即時監控</h1>
+  <div class="meta" id="lastUpdate">載入中...</div>
+</div>
+
+<div class="status-bar">
+  <span><span class="status-dot"></span> 實時監控中 · 每 30 秒自動更新</span>
+  <button class="refresh-btn" onclick="fetchAll()">🔄 立即更新</button>
+</div>
+
+<div class="dashboard" id="dashboard"></div>
+
+<script>
+// ============================================================
+// 設定：喺呢度加/改你要監控嘅巴士站
+// ============================================================
+const STOPS = [
+  { id: 'D9896F1A5B7C97C0', name: '順利消防局', code: 'KT183', dir: '往尖沙咀/旺角方向' },
+  { id: '7B9D5D0407DB14D3', name: '順利消防局', code: 'KT420', dir: '往順利/順天方向' },
+  { id: '927CE95D5C98C195', name: '順利消防局', code: 'KT184', dir: '往清水灣/西貢方向' },
+  // 加其他站：
+  // { id: 'STOP_ID', name: '站名', code: '編號', dir: '方向' },
+];
+
+const API_BASE = 'https://data.etabus.gov.hk/v1/transport/kmb/stop-eta/';
+const REFRESH_INTERVAL = 30000; // 30 秒
+const COUNTDOWN_REFRESH = 1000;  // 每秒更新倒數
+
+let lastData = {};
+
+// ============================================================
+// 主邏輯
+// ============================================================
+async function fetchStopETA(stop) {
+  try {
+    const resp = await fetch(API_BASE + stop.id);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const json = await resp.json();
+    return { stop, data: json.data || [] };
+  } catch (err) {
+    console.error(`Failed to fetch ${stop.name} (${stop.id}):`, err);
+    return { stop, data: null, error: err.message };
+  }
+}
+
+async function fetchAll() {
+  const results = await Promise.all(STOPS.map(fetchStopETA));
+  lastData = {};
+  for (const r of results) {
+    lastData[r.stop.id] = r;
+  }
+  render();
+  document.getElementById('lastUpdate').textContent =
+    `最後更新：${new Date().toLocaleTimeString('zh-HK', { hour12: false })}`;
+}
+
+function getCountdown(etaISO) {
+  if (!etaISO) return null;
+  const eta = new Date(etaISO);
+  const now = new Date();
+  const diff = (eta - now) / 1000; // seconds
+  if (diff < 0) return '已到站';
+  const mins = Math.floor(diff / 60);
+  const secs = Math.floor(diff % 60);
+  if (mins === 0) return `${secs}秒`;
+  return `${mins}分${secs}秒`;
+}
+
+function getEtaClass(minutes) {
+  if (minutes === null || minutes === undefined) return 'late';
+  if (minutes <= 3) return 'soon';
+  if (minutes <= 10) return 'medium';
+  return 'late';
+}
+
+function etaToReadable(etaISO) {
+  if (!etaISO) return '—';
+  const d = new Date(etaISO);
+  return d.toLocaleTimeString('zh-HK', { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+function render() {
+  const dashboard = document.getElementById('dashboard');
+  let html = '';
+
+  for (const stop of STOPS) {
+    const result = lastData[stop.id];
+    const routes = result?.data || [];
+    
+    // Group by route+dest
+    const grouped = {};
+    for (const r of routes) {
+      const key = `${r.route}|||${r.dest_tc}`;
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push(r);
+    }
+
+    html += `<div class="stop-card">
+      <div class="stop-header">
+        <h2>🏁 ${stop.name}</h2>
+        <span class="stop-id">${stop.code} · ${stop.dir}</span>
+      </div>
+      <div class="stop-body">`;
+
+    if (routes.length === 0 || result?.error) {
+      html += `<div class="no-routes">
+        ${result?.error ? '⚠️ 讀取失敗：' + result.error : '🎉 暫無巴士到站資料'}
+      </div>`;
+    } else {
+      const entries = Object.entries(grouped);
+      // Sort by nearest ETA
+      entries.sort((a, b) => {
+        const aEta = a[1][0]?.eta ? new Date(a[1][0].eta) : Infinity;
+        const bEta = b[1][0]?.eta ? new Date(b[1][0].eta) : Infinity;
+        return aEta - bEta;
+      });
+
+      for (const [key, items] of entries) {
+        const [route, dest] = key.split('|||');
+        
+        html += `<div class="route-row">
+          <span class="route-badge">${route}</span>
+          <span class="route-dest">往 ${dest}</span>
+          <div class="etas">`;
+
+        for (const item of items) {
+          const etaISO = item.eta;
+          const rmk = item.rmk_tc;
+          const inStop = item.in_stop || false;
+          
+          if (!etaISO && rmk) {
+            // No service
+            html += `<span class="eta-chip no-service">⚠ ${rmk}</span>`;
+          } else if (!etaISO) {
+            html += `<span class="eta-chip late">—</span>`;
+          } else {
+            const etaTime = new Date(etaISO);
+            const now = new Date();
+            const diffMin = Math.floor((etaTime - now) / 60000);
+            const cls = getEtaClass(diffMin);
+            const prefix = inStop ? '🚏 ' : (diffMin <= 0 ? '⚡ ' : '');
+            
+            html += `<span class="eta-chip ${cls}" data-eta="${etaISO}">
+              ${prefix}${etaToReadable(etaISO)}
+              <span class="countdown" data-countdown="${etaISO}">${getCountdown(etaISO)}</span>
+            </span>`;
+          }
+        }
+
+        html += `</div></div>`;
+      }
+    }
+
+    html += `</div></div>`;
+  }
+
+  dashboard.innerHTML = html;
+}
+
+// ============================================================
+// 每秒更新倒數
+// ============================================================
+function updateCountdowns() {
+  const elems = document.querySelectorAll('[data-countdown]');
+  for (const el of elems) {
+    const etaISO = el.getAttribute('data-countdown');
+    const cd = getCountdown(etaISO);
+    el.textContent = cd;
+    
+    // Update chip class based on new countdown
+    const chip = el.parentElement;
+    if (chip) {
+      const etaTime = new Date(etaISO);
+      const now = new Date();
+      const diffMin = Math.floor((etaTime - now) / 60000);
+      chip.className = chip.className.replace(/soon|medium|late/g, getEtaClass(diffMin));
+    }
+  }
+}
+
+// ============================================================
+// 啟動
+// ============================================================
+fetchAll();
+setInterval(fetchAll, REFRESH_INTERVAL);
+setInterval(updateCountdowns, COUNTDOWN_REFRESH);
+</script>
+</body>
+</html>
