@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>🧱 上海樂高樂園 · 7/10 實戰攻略</title>
+<style>
+:root {
+  --bg: #0f172a; --card: #1e293b; --text: #e2e8f0; --muted: #94a3b8;
+  --border: #334155; --accent: #fbbf24; --accent2: #ef4444;
+  --green: #22c55e; --blue: #3b82f6; --orange: #f97316; --purple: #a855f7;
+  --pink: #ec4899; --teal: #14b8a6;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+.sidebar { width: 220px; background: #0f172a; border-right: 1px solid var(--border); position: fixed; top: 0; left: 0; bottom: 0; overflow-y: auto; padding: 20px 16px; z-index: 10; }
+.sidebar h2 { color: var(--accent); font-size: 15px; margin-bottom: 16px; }
+.sidebar nav a { display: block; color: var(--muted); text-decoration: none; padding: 7px 10px; border-radius: 6px; font-size: 13px; margin-bottom: 4px; transition: all 0.2s; cursor: pointer; }
+.sidebar nav a:hover, .sidebar nav a.active { color: white; background: rgba(251,191,36,0.12); }
+.sidebar .quick-filters { margin-top: 20px; border-top: 1px solid var(--border); padding-top: 16px; }
+.sidebar .quick-filters h3 { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.filter-btn { display: block; width: 100%; text-align: left; padding: 5px 8px; border-radius: 4px; font-size: 12px; border: none; background: none; color: var(--muted); cursor: pointer; margin-bottom: 3px; }
+.filter-btn:hover { background: rgba(59,130,246,0.1); color: var(--blue); }
+.main { margin-left: 220px; flex: 1; padding: 24px 28px; max-width: 1100px; }
+.header { margin-bottom: 24px; }
+.header h1 { font-size: 28px; color: var(--accent); margin-bottom: 4px; }
+.header .subtitle { color: var(--muted); font-size: 13px; }
+.stats { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+.stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; min-width: 140px; flex: 1; }
+.stat-card .num { font-size: 28px; font-weight: 700; margin-bottom: 2px; }
+.stat-card .label { color: var(--muted); font-size: 12px; }
+.search-box { margin-bottom: 20px; }
+.search-box input { width: 100%; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-size: 14px; outline: none; }
+.search-box input:focus { border-color: var(--accent); }
+.search-box input::placeholder { color: var(--muted); }
+.section { margin-bottom: 32px; }
+.section h2 { font-size: 20px; color: var(--accent); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid rgba(251,191,36,0.3); display: flex; align-items: center; gap: 8px; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px; overflow: hidden; }
+.card-header { padding: 14px 18px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; transition: background 0.2s; }
+.card-header:hover { background: rgba(255,255,255,0.03); }
+.card-header .title { font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.card-header .arrow { color: var(--muted); transition: transform 0.2s; font-size: 12px; }
+.card.open .card-header .arrow { transform: rotate(90deg); }
+.card-body { display: none; padding: 0 18px 18px; font-size: 13px; line-height: 1.8; }
+.card.open .card-body { display: block; }
+.card-body table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 12px; }
+.card-body th { background: rgba(251,191,36,0.1); color: var(--accent); padding: 7px 10px; text-align: left; font-size: 11px; border-bottom: 1px solid var(--border); }
+.card-body td { padding: 7px 10px; border-bottom: 1px solid rgba(51,65,85,0.5); }
+.card-body tr:hover td { background: rgba(255,255,255,0.02); }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+.bg-green { background: rgba(34,197,94,0.15); color: var(--green); }
+.bg-yellow { background: rgba(251,191,36,0.15); color: var(--accent); }
+.bg-red { background: rgba(239,68,68,0.15); color: var(--accent2); }
+.bg-blue { background: rgba(59,130,246,0.15); color: var(--blue); }
+.bg-purple { background: rgba(168,85,247,0.15); color: var(--purple); }
+.bg-teal { background: rgba(20,184,166,0.15); color: var(--teal); }
+.bg-pink { background: rgba(236,72,153,0.15); color: var(--pink); }
+.alert { padding: 12px 16px; border-radius: 8px; margin: 12px 0; font-size: 13px; }
+.alert-info { background: rgba(59,130,246,0.1); border-left: 3px solid var(--blue); }
+.alert-warn { background: rgba(251,191,36,0.1); border-left: 3px solid var(--accent); }
+.alert-tip { background: rgba(34,197,94,0.1); border-left: 3px solid var(--green); }
+.timeline { position: relative; padding-left: 24px; }
+.timeline::before { content: ''; position: absolute; left: 8px; top: 0; bottom: 0; width: 2px; background: var(--border); }
+.timeline-item { margin-bottom: 16px; padding-left: 20px; position: relative; }
+.timeline-item::before { content: ''; position: absolute; left: -20px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+.timeline-item .time { color: var(--accent); font-weight: 600; font-size: 13px; }
+.timeline-item .desc { color: var(--text); font-size: 13px; margin-top: 2px; }
+.hidden { display: none !important; }
+.checklist { list-style: none; }
+.checklist li { padding: 4px 0; font-size: 13px; }
+.checklist li::before { content: '☐ '; color: var(--muted); margin-right: 6px; }
+.ride-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+.ride-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+.ride-card h4 { font-size: 13px; margin-bottom: 6px; }
+.ride-card .meta { font-size: 11px; color: var(--muted); }
+.note { font-size: 12px; color: var(--muted); font-style: italic; margin-top: 8px; }
+@media (max-width: 768px) { .sidebar { display: none; } .main { margin-left: 0; padding: 16px; } .stats { flex-direction: column; } }
+/* iOS Safari fixes */
+.card-header, .sidebar nav a, .filter-btn { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.sidebar { -webkit-overflow-scrolling: touch; }
+.card-header { min-height: 44px; display: flex; align-items: center; }
+.sidebar nav a { min-height: 36px; display: flex; align-items: center; }
+.filter-btn { min-height: 32px; }
+.card-body table { -webkit-overflow-scrolling: touch; display: block; overflow-x: auto; }
+input[type="text"] { -webkit-appearance: none; font-size: 16px; }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <h2>🧱 樂高攻略</h2>
+  <nav>
+    <a href="#quick" class="active" data-section="quick" onclick="scrollToSection(event,'quick')">⚡ 快速摘要</a>
+    <a href="#transport" data-section="transport" onclick="scrollToSection(event,'transport')">🚗 交通方案</a>
+    <a href="#tickets" data-section="tickets" onclick="scrollToSection(event,'tickets')">🎫 門票 + 入場</a>
+    <a href="#rides-tt" data-section="rides-tt" onclick="scrollToSection(event,'rides-tt')">👶 TT (92cm) 項目</a>
+    <a href="#rides-py" data-section="rides-py" onclick="scrollToSection(event,'rides-py')">👧 PY (~110cm) 項目</a>
+    <a href="#timeline" data-section="timeline" onclick="scrollToSection(event,'timeline')">⏰ 時間線</a>
+    <a href="#food" data-section="food" onclick="scrollToSection(event,'food')">🍽️ 餐飲</a>
+    <a href="#checklist" data-section="checklist" onclick="scrollToSection(event,'checklist')">🎒 裝備清單</a>
+    <a href="#tips" data-section="tips" onclick="scrollToSection(event,'tips')">💡 實戰貼士</a>
+  </nav>
+  <div class="quick-filters">
+    <h3>快速篩選</h3>
+    <button class="filter-btn" onclick="filterRides(event,'all')">🔍 全部項目</button>
+    <button class="filter-btn" onclick="filterRides(event,'tt')">👶 TT 可玩 (92cm)</button>
+    <button class="filter-btn" onclick="filterRides(event,'py')">👧 PY 可玩</button>
+    <button class="filter-btn" onclick="filterRides(event,'no-limit')">🟢 無身高限制</button>
+    <button class="filter-btn" onclick="filterRides(event,'indoor')">🏠 室內冷氣</button>
+  </div>
+</div>
+
+<div class="main">
+
+<div class="header">
+  <h1>🧱 上海樂高樂園 · 親子實戰攻略</h1>
+  <div class="subtitle">👨‍👩‍👧‍👧 兩大兩小（PY 5歲 + TT 2歲 92cm）｜📅 2026年7月10日（五）｜🕐 半日票 13:30 入場</div>
+</div>
+
+<div class="stats">
+  <div class="stat-card"><div class="num" style="color:var(--accent)">~70km</div><div class="label">酒店→樂園距離</div></div>
+  <div class="stat-card"><div class="num" style="color:var(--green)">52min</div><div class="label">自駕/的士車程</div></div>
+  <div class="stat-card"><div class="num" style="color:var(--blue)">18min</div><div class="label">高鐵最快</div></div>
+  <div class="stat-card"><div class="num" style="color:var(--pink)">20+</div><div class="label">TT 可玩項目</div></div>
+  <div class="stat-card"><div class="num" style="color:var(--purple)">4.5h</div><div class="label">半日遊玩時間</div></div>
+  <div class="stat-card"><div class="num" style="color:var(--teal)">18:00</div><div class="label">閉園時間</div></div>
+</div>
+
+<div class="search-box">
+  <input type="text" id="search" placeholder="🔍 搜尋項目／區域／身高限制..." oninput="doSearch()">
+</div>
+
+<!-- QUICK SUMMARY -->
+<div class="section" id="quick">
+  <h2>⚡ 快速摘要</h2>
+  <div class="alert alert-tip">💡 <strong>半日票策略</strong>：13:30 入場，18:00 閉園，共 4.5 小時。TT 午睡到自然醒再出發，唔使趕。重點：奇趣積木城（TT天堂）+ 樂高城市（PY駕駛學校）+ 迷你天地。</div>
+  <div class="alert alert-info">📌 <strong>今日重點</strong>：TT 92cm 可玩 20+ 項目，包括解鎖 6 個 90cm 門檻項目（小龍飛車、凱的空中競技等）。皇家競技場（91cm）剛好過！勇登高塔（95cm）差 3cm 玩唔到。<br>PY (~110cm) 幾乎全部可玩，只差悟空小俠雲霄歷險（120cm）。</div>
+  <div class="alert alert-warn">⚠️ <strong>注意</strong>：樂高樂園 <strong>沒有 FastPass/PA</strong>，純排隊制。暑假週五人潮中等，熱門項目排 30-60 分鐘。半日票時間緊，以「體驗優先」取代「刷項目」心態。室內設施優先（避暑）。</div>
+</div>
+
+<!-- TRANSPORT -->
+<div class="section" id="transport">
+  <h2>🚗 交通方案（酒店 → 樂高樂園）</h2>
+  <div class="card open" data-search="交通 的士 高鐵 自駕 金山北 滴滴">
+    <div class="card-header" onclick="toggleCard(event)"><span class="title">🚕 <span class="badge bg-yellow">🥇 推薦</span> 全程的士/滴滴</span><span class="arrow">▶</span></div>
+    <div class="card-body">
+      <table>
+        <tr><th>項目</th><th>詳情</th></tr>
+        <tr><td>起點</td><td>西藏中路555號 雅居樂萬豪侯爵酒店</td></tr>
+        <tr><td>終點</td><td>上海市金山區楓涇鎮樂繽路999號</td></tr>
+        <tr><td>距離</td><td>~70 km</td></tr>
+        <tr><td>車程</td><td>~52 分鐘（高速公路）</td></tr>
+        <tr><td>費用估算</td><td>~¥200-280（滴滴快車）</td></tr>
+        <tr><td>優點</td><td>✅ 門對門 · 唔使搬行李 · BB車直接上 · 冷氣</td></tr>
+        <tr><td>缺點</td><td>❌ 費用較高 · 下午可能塞車</td></tr>
+      </table>
+      <div class="alert alert-tip">💡 一家四口 + BB車，的士最簡單。12:00 出發，13:00 前到，仲有時間食午餐先入場。</div>
+    </div>
+  </div>
+  <div class="card" data-search="交通 的士 高鐵 自駕 金山北 滴滴">
+    <div class="card-header" onclick="toggleCard(event)"><span class="title">🚄 <span class="badge bg-blue">🥈 備選</span> 高鐵 + 的士</span><span class="arrow">▶</span></div>
+    <div class="card-body">
+      <table>
+        <tr><th>路段</th><th>方式</th><th>時間</th><th>費用</th></tr>
+        <tr><td>酒店 → 上海虹橋站</td><td>🚕 的士/地鐵</td><td>~25 分鐘</td><td>~¥30-50</td></tr>
+        <tr><td>上海虹橋 → 金山北站</td><td>🚄 高鐵</td><td>~18 分鐘</td><td>~¥20-50/人</td></tr>
+        <tr><td>金山北站 → 樂園</td><td>🚌 公交 ¥1 / 步行 10 分鐘</td><td>~10 分鐘</td><td>~¥1</td></tr>
+        <tr><td colspan="2"><strong>合計</strong></td><td><strong>~60-70 分鐘</strong></td><td><strong>~¥150-250</strong></td></tr>
+      </table>
+      <div class="alert alert-warn">⚠️ 一家四口轉三次車 + BB車 + 行李，不如一車直達。除非想體驗高鐵，否則唔推薦。</div>
+    </div>
+  </div>
+  <div class="card" data-search="交通 的士 高鐵 自駕 金山北 滴滴">
+    <div class="card-header" onclick="toggleCard(event)"><span class="title">🏨 回程</span><span class="arrow">▶</span></div>
+    <div class="card-body">
+      <p>18:00 閉園 → 滴滴叫車返酒店。傍晚可能較難叫車（金山較偏），建議 <strong>17:30 開始叫車</strong>。</p>
+      <p>回程可考慮：樂園 → 金山北站（高鐵返虹橋）→ 的士返酒店，避開高速公路傍晚塞車。</p>
+    </div>
+  </div>
+</div>
+
+<!-- TICKETS -->
+<div class="section" id="tickets">
+  <h2>🎫 門票 + 入場策略</h2>
+  <div class="card open" data-search="門票 半日票 入場 價格 飛豬">
+    <div class="card-header" onclick="toggleCard(event)"><span class="title">💰 門票估算</span><span class="arrow">▶</span></div>
+    <div class="card-body">
+      <table>
+        <tr><th>票種</th><th>預估價格</th><th>備註</th></tr>
+        <tr><td>成人票（7月暑假高峰）</td><td>~¥549-599</td><td>標準一日票</td></tr>
+        <tr><td>5歲 PY 兒童票</td><td>~¥439-479</td><td>2-12歲兒童</td></tr>
+        <tr><td>2歲 TT</td><td><strong>¥0 免費！</strong></td><td>2歲以下免費（按年齡，非身高）</td></tr>
+        <tr><td colspan="3"><hr></td></tr>
+        <tr><td><strong>半日票</strong>（13:30入場）</td><td>比全日票平 ~30-40%</td><td>✅ 你嘅首選！</td></tr>
+        <tr><td colspan="3"><hr></td></tr>
+        <tr><td><strong>合計（2大1小半日票）</strong></td><td><strong>~¥800-1,100</strong></td><td>TT 免費！</td></tr>
+      </table>
+      <div class="alert alert-warn">⚠️ 以上為 XHS 參考價。建議出發前用 <strong>飛豬/攜程 App</strong> check 實時價格。購買半日票通常需要官方 App。</div>
+      <div class="alert alert-info">📱 <strong>官方 App</strong>：下載「上海樂高樂園」App，可查當日開放時間、項目身高限制、演出時間表、購買樂捷通。</div>
+    </div>
+  </div>
+  <div class="card" data-search="門票 半日票 入場 價格 飛豬 樂捷通">
+    <div class="card-header" onclick="toggleCard(event)"><span class="title">🚀 樂捷通（快速通行）</span><span class="arrow">▶</span></div>
+    <div class="card-body">
+      <table>
+        <tr><th>票種</th><th>價格</th><th>建議</th></tr>
+        <tr><td>單項票</td><td>¥78/次</td><td>買 2-3 張俾熱門項目（小龍飛車、大飛車）</td></tr>
+        <tr><td>無限次票</td><td>¥788</td><td>❌ 半日票唔划算</td></tr>
+      </table>
+      <div class="alert alert-tip">💡 半日票時間有限，買 2-3 張單項樂捷通（~¥156-234）針對排最耐嘅項目，性價比最高。</div>
+    </div>
+  </div>
+  <div class="card" data-search="門票 半日票 入場 價格 飛豬 樂捷通">
+    <div class="card-header" onclick="toggleCard(event)"><span class="title">📏 入場流程</span><span class="arrow">▶</span></div>
+    <div class="card-body">
+      <ol>
+        <li>🎫 出示手機門票 QR code 入閘</li>
+        <li>📏 去客服中心 <strong>量身高 → 攞彩色手環</strong>（TT 92cm / PY ~110cm）</li>
+        <li>🚼 租 BB 車（如需要）</li>
+        <li>📱 入園後 App 綁定門票 → 買樂捷通</li>
+        <li>🎉 出發玩！</li>
+      </ol>
+      <div class="alert alert-info">📌 TT 2歲以下需出示<strong>出生證明照片</strong>（唔使帶正本，手機相就得）證明免費資格。</div>
+    </div>
+  </div>
+</div>
+
+<!-- TT RIDES -->
+<div class="section" id="rides-tt">
+  <h2>👶 TT（2歲 · 92cm）可玩項目</h2>
+  <div class="ride-grid">
+    <div class="ride-card" data-filter="tt no-limit indoor">
+      <h4>🧱 奇趣積木城 <span class="badge bg-green">無限制</span></h4>
+      <div class="meta">🏠 室內 | 滑梯 · 海洋球 · 攀爬 · 大積木</div>
+      <p class="note">⭐⭐⭐⭐⭐ TT 天堂！室內冷氣，可以玩 1-2 小時</p>
+    </div>
+    <div class="ride-card" data-filter="tt no-limit">
+      <h4>🚂 得寶山谷小火車 <span class="badge bg-green">無限制</span></h4>
+      <div class="meta">🌳 戶外 | 溫和觀光</div>
+      <p class="note">⭐⭐⭐⭐⭐ 低幼首選</p>
+    </div>
+    <div class="ride-card" data-filter="tt no-limit">
+      <h4>🎠 旋轉積木派對 <span class="badge bg-green">70cm+</span></h4>
+      <div class="meta">🌳 戶外 | 溫和旋轉</div>
+      <p class="note">⭐⭐⭐⭐⭐ 類似旋轉木馬，超慢速</p>
+    </div>
+    <div class="ride-card" data-filter="tt py">
+      <h4>🐉 小龍飛車 <span class="badge bg-yellow">90cm</span></h4>
+      <div class="meta">🏰 城堡區 | 溫和過山車</div>
+      <p class="note">⭐⭐⭐⭐ 全球人氣！TT 剛好 92cm ✅</p>
+    </div>
+    <div class="ride-card" data-filter="tt py">
+      <h4>🥷 凱的空中競技 <span class="badge bg-yellow">90cm</span></h4>
+      <div class="meta">🥷 幻影忍者區 | 溫和旋轉</div>
+      <p class="note">⭐⭐⭐</p>
+    </div>
+    <div class="ride-card" data-filter="tt py">
+      <h4>🐲 龍小驕之玉龍神力 <span class="badge bg-yellow">90cm</span></h4>
+      <div class="meta">🥷 幻影忍者區</div>
+      <p class="note">⭐⭐⭐</p>
+    </div>
+    <div class="ride-card" data-filter="tt py">
+      <h4>🚤 海岸警衛學院 <span class="badge bg-yellow">90cm</span></h4>
+      <div class="meta">🏙️ 城市區 | 水槍互動</div>
+      <p class="note">⭐⭐⭐⭐ 親子合作滅火</p>
+    </div>
+    <div class="ride-card" data-filter="tt py">
+      <h4>🧙 巫師飛行器 <span class="badge bg-yellow">90cm</span></h4>
+      <div class="meta">🏰 城堡區</div>
+      <p class="note">⭐⭐⭐</p>
+    </div>
+    <div class="ride-card" data-filter="tt">
+      <h4>🏇 皇家競技場 <span class="badge bg-yellow">91cm</span></h4>
+      <div class="meta">🏰 城堡區 | 小朋友騎小馬</div>
+      <p class="note">⭐⭐⭐⭐ TT 92cm 剛好 1cm 過檻！💪</p>
+    </div>
+    <div class="ride-card" data-filter="tt no-limit">
+      <h4>🚗 兒童駕駛學校 <span class="badge bg-green">無限制</span></h4>
+      <div class="meta">🏙️ 城市區 | 樂高小車</div>
+      <p class="note">⭐⭐⭐⭐⭐ 完成有樂高駕照！</p>
+    </div>
+    <div class="ride-card" data-filter="tt no-limit indoor">
+      <h4>🌍 迷你天地 <span class="badge bg-green">無限制</span></h4>
+      <div class="meta">🏠 室內 | 樂高微縮景觀</div>
+      <p class="note">⭐⭐⭐⭐⭐ 推 BB 車隨便逛，大人小朋友都鍾意</p>
+    </div>
+    <div class="ride-card" data-filter="tt no-limit">
+      <h4>🛶 創想世界遊船 <span class="badge bg-green">無限制</span></h4>
+      <div class="meta">🌊 創想世界 | 樂高地標觀賞</div>
+      <p class="note">⭐⭐⭐⭐⭐ 強推！</p>
+    </div>
+    <div class="ride-card" data-filter="tt no-limit indoor">
+      <h4>🥷 幻影忍者室內場 <span class="badge bg-green">無限制</span></h4>
+      <div class="meta">🏠 室內 | 軟包攀爬 + 滑梯</div>
+      <p class="note">⭐⭐⭐⭐ 不怕曬！</p>
+    </div>
+    <div class="ride-card" data-filter="tt no-limit">
+      <h4>🏖️ 沙池/積木區 <span class="badge bg-green">無限制</span></h4>
+      <div class="meta">🌳 戶外 | 自由玩</div>
+      <p class="note">⭐⭐⭐</p>
+    </div>
+  </div>
+  <div class="alert alert-warn" style="margin-top:16px;">⚠️ TT 玩唔到：<strong>勇登高塔（95cm）</strong>差 3cm｜需 100cm+：大飛車、摩托艇、心湖城秋千、初級飛行學院、花果山冒險｜120cm：悟空小俠雲霄歷險｜110cm：傑的重力訓練營</div>
+</div>
+
+<!-- PY RIDES -->
+<div class="section" id="rides-py">
+  <h2>👧 PY（5歲 · ~110cm）額外項目</h2>
+  <p style="color:var(--muted);font-size:13px;margin-bottom:12px;">PY 能玩以上 TT 全部項目 + 以下額外項目：</p>
+  <div class="ride-grid">
+    <div class="ride-card" data-filter="py">
+      <h4>🎢 樂高大飛車 <span class="badge bg-yellow">100-195cm</span></h4>
+      <div class="meta">創想世界 | 熱門過山車</div>
+      <p class="note">⭐⭐⭐⭐⭐ PY 必玩！建議買樂捷通</p>
+    </div>
+    <div class="ride-card" data-filter="py">
+      <h4>🐵 花果山冒險 <span class="badge bg-yellow">100cm</span></h4>
+      <div class="meta">悟空小俠區 | 視覺豐富</div>
+      <p class="note">⭐⭐⭐⭐ 色彩繽紛</p>
+    </div>
+    <div class="ride-card" data-filter="py">
+      <h4>🏍️ 摩托艇追逐 <span class="badge bg-yellow">100cm</span></h4>
+      <div class="meta">好朋友區</div>
+      <p class="note">⭐⭐⭐</p>
+    </div>
+    <div class="ride-card" data-filter="py">
+      <h4>🎠 心湖城秋千 <span class="badge bg-yellow">100cm</span></h4>
+      <div class="meta">好朋友區</div>
+      <p class="note">⭐⭐⭐</p>
+    </div>
+    <div class="ride-card" data-filter="py">
+      <h4>✈️ 初級飛行學院 <span class="badge bg-yellow">100cm</span></h4>
+      <div class="meta">城市區</div>
+      <p class="note">⭐⭐⭐</p>
+    </div>
+    <div class="ride-card" data-filter="py">
+      <h4>🏗️ 勇登高塔 <span class="badge bg-yellow">95cm</span></h4>
+      <div class="meta">城堡區 | 親子拉繩爬塔</div>
+      <p class="note">⭐⭐⭐⭐ PY 夠高！TT 玩唔到</p>
+    </div>
+  </div>
+  <div class="alert alert-info" style="margin-top:16px;">ℹ️ PY 唯一玩唔到：<strong>悟空小俠雲霄歷險（120cm）</strong>。其餘全部 OK！</div>
+</div>
+
+<!-- TIMELINE -->
+<div class="section" id="timeline">
+  <h2>⏰ 7/10 建議時間線</h2>
+  <div class="timeline">
+    <div class="timeline-item"><div class="time">😴 早上</div><div class="desc">自然醒 · 酒店早餐 · TT 午睡 · 唔使趕！</div></div>
+    <div class="timeline-item"><div class="time">🍜 11:30</div><div class="desc">酒店附近午餐（老半齋 / 南京路輕食）</div></div>
+    <div class="timeline-item"><div class="time">🚕 12:00</div><div class="desc">酒店出發 · 滴滴叫車 → 金山樂高樂園（~52 分鐘）</div></div>
+    <div class="timeline-item"><div class="time">📍 13:00</div><div class="desc">到達樂園 · 租 BB 車（如需要）· 下載 App · 買樂捷通</div></div>
+    <div class="timeline-item"><div class="time">🎫 13:30</div><div class="desc"><strong>入場！</strong> → 先衝 <strong>奇趣積木城</strong>（TT + PY 一齊玩）</div></div>
+    <div class="timeline-item"><div class="time">🏰 14:15</div><div class="desc"><strong>樂高城堡區</strong>：小龍飛車（全家）→ 皇家競技場（TT 騎馬）→ 勇登高塔（PY solo）</div></div>
+    <div class="timeline-item"><div class="time">🌍 15:00</div><div class="desc"><strong>迷你天地</strong>（室內冷氣！）→ 推 BB 車慢慢逛 · 影相</div></div>
+    <div class="timeline-item"><div class="time">🏙️ 15:30</div><div class="desc"><strong>樂高城市區</strong>：駕駛學校（PY 攞駕照！）→ 海岸警衛學院</div></div>
+    <div class="timeline-item"><div class="time">🍽️ 16:00</div><div class="desc">下午茶/小食 break（飢餓大嘴龍廚餐廳 或自備小食）</div></div>
+    <div class="timeline-item"><div class="time">🎢 16:30</div><div class="desc"><strong>創想世界</strong>：樂高大飛車（PY 用樂捷通！）→ 遊船 → 觀光塔</div></div>
+    <div class="timeline-item"><div class="time">🥷 17:15</div><div class="desc"><strong>幻影忍者區</strong>：室內遊樂場（TT 放電）→ 凱的空中競技</div></div>
+    <div class="timeline-item"><div class="time">📸 17:45</div><div class="desc">巨型樂高人仔「搭搭」打卡 · 樂高商店逛 · 準備離園</div></div>
+    <div class="timeline-item"><div class="time">🚕 18:00</div><div class="desc">閉園 · 滴滴返酒店（提前 17:30 叫車）</div></div>
+    <div class="timeline-item"><div class="time">🍽️ 19:00</div><div class="desc">返到酒店附近晚餐</div></div>
+  </div>
+  <div class="alert alert-tip" style="margin-top:16px;">💡 <strong>核心策略</strong>：室內優先（避暑）→ 熱門項目用樂捷通 → 唔使貪多，TT 開心最重要 → 18:00 前買手信離場。</div>
+</div>
+
+<!-- FOOD -->
+<div class="section" id="food">
+  <h2>🍽️ 餐飲攻略</h2>
+  <div class="card open" data-search="餐飲 餐廳 食物 價格">
+    <div class="card-header" onclick="toggleCard(event)"><span class="title">🍔 園內餐廳</span><span class="arrow">▶</span></div>
+    <div class="card-body">
+      <table>
+        <tr><th>餐廳</th><th>位置</th><th>推薦</th><th>價格</th></tr>
+        <tr><td>飢餓大嘴龍廚</td><td>積木街道</td><td>兒童套餐（番茄肉丸+積木飯+水果+牛奶）</td><td>¥68</td></tr>
+        <tr><td>飢餓大嘴龍廚</td><td>積木街道</td><td>家庭套餐（4迷你漢堡+沙拉+3飲品）</td><td>¥328</td></tr>
+        <tr><td>chili's</td><td>積木街道</td><td>美式餐酒館</td><td>~¥80-120</td></tr>
+        <tr><td>悟空小俠美食城</td><td>悟空小俠區</td><td>中式+東南亞</td><td>~¥50-80</td></tr>
+        <tr><td>藍瓶咖啡</td><td>積木街道</td><td>☕ 特色咖啡</td><td>~¥30-50</td></tr>
+      </table>
+      <div class="alert alert-tip">💡 半日票入場前食咗午餐先！園內只需下午茶/小食。自帶小食 ✅（水果、餅乾、水），❌ 不可帶自熱鍋/泡麵。</div>
+    </div>
+  </div>
+</div>
+
+<!-- CHECKLIST -->
+<div class="section" id="checklist">
+  <h2>🎒 裝備清單（聽朝執！）</h2>
+  <div class="card open" data-search="清單 裝備 必帶">
+    <div class="card-header" onclick="toggleCard(event)"><span class="title">✅ 出發前檢查</span><span class="arrow">▶</span></div>
+    <div class="card-body">
+      <ul class="checklist">
+        <li><strong>BB 車</strong>（自帶 > 園區租，園區大 TT 會攰）</li>
+        <li><strong>門票</strong>（手機 App 已買，入場掃碼）</li>
+        <li><strong>防曬三件套</strong>：帽子 + 太陽眼鏡 + SPF50+ 防曬霜</li>
+        <li><strong>換洗衣物 2 套</strong>（TT + PY 各一套，出汗備用）</li>
+        <li><strong>小食 + 飲用水</strong>（水果、餅乾、果汁）</li>
+        <li><strong>兒童防蚊液</strong>（戶外項目用）</li>
+        <li><strong>濕紙巾 + 紙巾</strong></li>
+        <li><strong>尿片 + 奶粉</strong>（TT 日常用品）</li>
+        <li><strong>手機充電寶</strong>（影相 + App + 滴滴叫車）</li>
+        <li><strong>小毛巾</strong>（抹汗）</li>
+        <li><strong>TT 出生證明照片</strong>（手機相即可，證明免費資格）</li>
+      </ul>
+      <div class="alert alert-warn">⚠️ <strong>唔使帶</strong>：雨衣（激流勇進未開）、自拍桿（❌ 禁止）、大疆直拍桿（❌ 禁止）、泳衣（心湖城水上樂園視乎天氣）</div>
+    </div>
+  </div>
+</div>
+
+<!-- TIPS -->
+<div class="section" id="tips">
+  <h2>💡 實戰貼士（小紅書老手精華）</h2>
+  <div class="card open" data-search="貼士 技巧 攻略">
+    <div class="card-header" onclick="toggleCard(event)"><span class="title">🧠 10 條必知</span><span class="arrow">▶</span></div>
+    <div class="card-body">
+      <table>
+        <tr><th>#</th><th>貼士</th></tr>
+        <tr><td>1</td><td>📏 入園先去客服中心 <strong>量身高攞彩色手環</strong>（唔使除鞋），之後 staff 睇手環就知玩唔玩得</td></tr>
+        <tr><td>2</td><td>🕘 官方開 10:00，但<strong>實測 9:30 就放人</strong>。你半日票 13:30 入，避開早鳥人潮</td></tr>
+        <tr><td>3</td><td>🏠 <strong>室內優先</strong>：7 月 35°C+，奇趣積木城 + 迷你天地 + 幻影忍者室內場 = 避暑三寶</td></tr>
+        <tr><td>4</td><td>👶 <strong>體驗優先</strong>：唔好諗住「刷項目」，TT 開心就得。排隊超過 30 分鐘就 skip</td></tr>
+        <tr><td>5</td><td>🍼 園內有<strong>母嬰室</strong>，提供熱水。可自帶輔食（果泥、酸奶、餅乾）</td></tr>
+        <tr><td>6</td><td>🅿️ 停車去 <strong>樂繽紛 mall</strong>（註冊會員免 2 小時），mall 入面餐廳比園內平</td></tr>
+        <tr><td>7</td><td>🎭 留意 <strong>4D 電影</strong>：會噴水吹風，TT 可能驚，先觀察音量</td></tr>
+        <tr><td>8</td><td>📱 <strong>入園掃碼睇當日演出時間表</strong>：舞台劇 ~20 分鐘，小朋友啱睇</td></tr>
+        <tr><td>9</td><td>🚕 <strong>17:30 開始叫滴滴</strong>：金山較偏，傍晚難叫車。或行去金山北站搭高鐵返虹橋</td></tr>
+        <tr><td>10</td><td>🛍️ 手信：<strong>樂高大商店</strong>（積木街道）臨走先逛，唔好拎住行</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- BUDGET -->
+<div class="section" id="budget">
+  <h2>💰 預算估算</h2>
+  <div class="card open" data-search="預算 費用">
+    <div class="card-header" onclick="toggleCard(event)"><span class="title">一家四口（7/10 半日票）</span><span class="arrow">▶</span></div>
+    <div class="card-body">
+      <table>
+        <tr><th>項目</th><th>估算</th></tr>
+        <tr><td>門票（2大1小半日 + TT免費）</td><td>~¥800-1,100</td></tr>
+        <tr><td>樂捷通單項 × 3</td><td>~¥234</td></tr>
+        <tr><td>的士來回</td><td>~¥400-560</td></tr>
+        <tr><td>園內餐飲（下午茶+小食）</td><td>~¥150-250</td></tr>
+        <tr><td><strong>合計</strong></td><td><strong>~¥1,584-2,144</strong></td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+// iOS-safe: use event.currentTarget instead of 'this'
+function toggleCard(e) { e.currentTarget.parentElement.classList.toggle('open'); }
+function doSearch() {
+  var q = document.getElementById('search').value.toLowerCase().trim();
+  document.querySelectorAll('.card').forEach(function(c) {
+    var ds = c.getAttribute('data-search') || '';
+    c.classList.toggle('hidden', q && !ds.toLowerCase().includes(q));
+  });
+}
+function scrollToSection(e, id) {
+  if (e) e.preventDefault();
+  var el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.querySelectorAll('.sidebar nav a').forEach(function(a) { a.classList.remove('active'); });
+  if (e && e.currentTarget) e.currentTarget.classList.add('active');
+}
+function filterRides(e, filter) {
+  if (e) e.preventDefault();
+  document.querySelectorAll('.ride-card').forEach(function(card) {
+    var filters = card.getAttribute('data-filter') || '';
+    card.style.display = (filter === 'all' || filters.includes(filter)) ? '' : 'none';
+  });
+  // highlight active filter button
+  document.querySelectorAll('.filter-btn').forEach(function(b) { b.style.color = ''; b.style.fontWeight = ''; });
+  if (e && e.currentTarget) { e.currentTarget.style.color = 'var(--blue)'; e.currentTarget.style.fontWeight = '600'; }
+}
+// iOS: delegation fallback for card toggle (touch-friendly)
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.card-header').forEach(function(h) {
+    h.addEventListener('click', function(e) { this.parentElement.classList.toggle('open'); });
+  });
+  // sidebar nav delegation
+  document.querySelectorAll('.sidebar nav a').forEach(function(a) {
+    a.addEventListener('click', function(e) {
+      e.preventDefault();
+      var id = this.getAttribute('data-section');
+      if (id) {
+        var el = document.getElementById(id);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        document.querySelectorAll('.sidebar nav a').forEach(function(x) { x.classList.remove('active'); });
+        this.classList.add('active');
+      }
+    });
+  });
+});
+</script>
+
+</body>
+</html>
