@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OT鐘計算工具</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif;
+    background: #eef1f5;
+    color: #1f2933;
+    max-width: 540px;
+    margin: 0 auto;
+    padding: 32px 16px 48px;
+  }
+  h1 {
+    text-align: center;
+    font-size: 24px;
+    color: #173a63;
+    margin-bottom: 4px;
+    letter-spacing: 1px;
+  }
+  .subtitle {
+    text-align: center;
+    color: #7b8794;
+    font-size: 13px;
+    margin-bottom: 24px;
+  }
+  .card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 20px 22px;
+    box-shadow: 0 1px 4px rgba(23, 58, 99, 0.08);
+    margin-bottom: 16px;
+    border: 1px solid #e4e9ef;
+  }
+  .card-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #173a63;
+    margin-bottom: 14px;
+  }
+  .field-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .field-row:last-child { margin-bottom: 0; }
+  label {
+    font-size: 14px;
+    color: #334155;
+    white-space: nowrap;
+  }
+  input[type="text"] {
+    width: 96px;
+    padding: 9px 8px;
+    border: 1.5px solid #c6cfd9;
+    border-radius: 8px;
+    font-size: 19px;
+    font-family: Consolas, "Courier New", monospace;
+    text-align: center;
+    letter-spacing: 3px;
+    background: #fbfcfe;
+    color: #0f172a;
+    outline: none;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  input[type="text"]:focus {
+    border-color: #3b82c4;
+    background: #ffffff;
+  }
+  input.error {
+    border-color: #e53e3e;
+    background: #fff5f5;
+  }
+  .hint {
+    font-size: 12px;
+    color: #7b8794;
+    margin-top: 10px;
+    line-height: 1.6;
+  }
+  .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px dashed #e2e8f0;
+  }
+  .checkbox-row input[type="checkbox"] {
+    width: 17px;
+    height: 17px;
+    accent-color: #173a63;
+    cursor: pointer;
+  }
+  .checkbox-row label {
+    font-size: 14px;
+    cursor: pointer;
+    user-select: none;
+  }
+  #warning {
+    display: none;
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: #fff8e1;
+    border: 1px solid #f0d48a;
+    border-radius: 8px;
+    color: #8a6d1a;
+    font-size: 13px;
+    line-height: 1.6;
+    white-space: pre-line;
+  }
+  .output-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 6px 22px;
+    box-shadow: 0 1px 4px rgba(23, 58, 99, 0.08);
+    border: 1px solid #e4e9ef;
+  }
+  .output-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 0;
+  }
+  .output-row + .output-row {
+    border-top: 1px solid #eef2f6;
+  }
+  .output-value {
+    font-size: 19px;
+    font-weight: 600;
+    font-family: Consolas, "Courier New", monospace;
+  }
+  .output-value.deduct { color: #b45309; }
+  .output-value.ot { color: #1d6f42; }
+</style>
+</head>
+<body>
+
+<h1>OT鐘計算工具</h1>
+<p class="subtitle">輸入時間格式：4位數字（例：1836 = 18時36分）</p>
+
+<div class="card">
+  <div class="card-title">標準時間</div>
+  <div class="field-row">
+    <label for="stdStart">標準上班</label>
+    <input type="text" id="stdStart" maxlength="4" inputmode="numeric" placeholder="0900" autocomplete="off">
+    <label for="stdEnd">標準下班</label>
+    <input type="text" id="stdEnd" maxlength="4" inputmode="numeric" placeholder="1800" autocomplete="off">
+  </div>
+  <div class="checkbox-row">
+    <input type="checkbox" id="crossDay">
+    <label for="crossDay">跨日（收工時間屬翌日）</label>
+  </div>
+  <div id="warning"></div>
+  <p class="hint">＊ 標準時間會自動記住上次設定</p>
+</div>
+
+<div class="card">
+  <div class="card-title">實際時間</div>
+  <div class="field-row">
+    <label for="actStart">實際上班</label>
+    <input type="text" id="actStart" maxlength="4" inputmode="numeric" placeholder="0900" autocomplete="off">
+    <label for="actEnd">實際下班</label>
+    <input type="text" id="actEnd" maxlength="4" inputmode="numeric" placeholder="1800" autocomplete="off">
+  </div>
+  <p class="hint">＊ 輸入後即時計算<br>＊ 格式錯誤只會紅框提示，不會輸出結果</p>
+</div>
+
+<div class="output-card">
+  <div class="output-row">
+    <span class="output-value deduct" id="deductOut">扣0分鐘(0)</span>
+  </div>
+  <div class="output-row">
+    <span class="output-value ot" id="otOut">OT 0分鐘(0)</span>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var stdStart = document.getElementById('stdStart');
+  var stdEnd = document.getElementById('stdEnd');
+  var actStart = document.getElementById('actStart');
+  var actEnd = document.getElementById('actEnd');
+  var crossDay = document.getElementById('crossDay');
+  var warning = document.getElementById('warning');
+  var deductOut = document.getElementById('deductOut');
+  var otOut = document.getElementById('otOut');
+
+  // ---- localStorage：標準時間記住上次設定 ----
+  stdStart.value = localStorage.getItem('otclock_stdStart') || '';
+  stdEnd.value = localStorage.getItem('otclock_stdEnd') || '';
+
+  stdStart.addEventListener('input', function () {
+    localStorage.setItem('otclock_stdStart', stdStart.value);
+    update();
+  });
+  stdEnd.addEventListener('input', function () {
+    localStorage.setItem('otclock_stdEnd', stdEnd.value);
+    update();
+  });
+  actStart.addEventListener('input', update);
+  actEnd.addEventListener('input', update);
+  crossDay.addEventListener('change', update);
+
+  // ---- 解析：格式正確回傳分鐘數（0-1439），錯誤回 null ----
+  function parseTime(v) {
+    if (!/^\d{4}$/.test(v)) return null;
+    var h = parseInt(v.slice(0, 2), 10);
+    var m = parseInt(v.slice(2, 4), 10);
+    if (h > 23 || m > 59) return null;
+    return h * 60 + m;
+  }
+
+  function markError(input, parsed) {
+    var hasError = input.value !== '' && parsed === null;
+    input.classList.toggle('error', hasError);
+  }
+
+  // ---- 顯示格式 ----
+  function formatTime(min) {
+    var h = Math.floor(min / 60);
+    var m = min % 60;
+    if (h === 0) return m + '分鐘';
+    if (m === 0) return h + '小時';
+    return h + '小時' + m + '分鐘';
+  }
+
+  // 總分鐘 ÷ 60，截斷至小數點後 3 位；整數直接顯示
+  function formatValue(min) {
+    var v = min / 60;
+    var t = Math.floor(v * 1000) / 1000;
+    if (Math.floor(t) === t) return String(t);
+    return t.toFixed(3);
+  }
+
+  function renderDeduct(min) {
+    deductOut.textContent = '扣' + formatTime(min) + '(' + formatValue(min) + ')';
+  }
+  function renderOT(min) {
+    otOut.textContent = 'OT ' + formatTime(min) + '(' + formatValue(min) + ')';
+  }
+
+  function update() {
+    var stdS = parseTime(stdStart.value);
+    var stdE = parseTime(stdEnd.value);
+    var actS = parseTime(actStart.value);
+    var actE = parseTime(actEnd.value);
+
+    // 紅框標記
+    markError(stdStart, stdS);
+    markError(stdEnd, stdE);
+    markError(actStart, actS);
+    markError(actEnd, actE);
+
+    // 警告訊息
+    var msgs = [];
+    if (stdS !== null && stdE !== null && !crossDay.checked && stdE < stdS) {
+      msgs.push('⚠️ 標準下班時間早於標準上班時間，如屬跨日更，請勾選「跨日」。');
+    }
+    if (!crossDay.checked && actS !== null && actE !== null && actE < actS) {
+      msgs.push('⚠️ 實際下班時間早於實際上班時間，如屬翌日收工，請勾選「跨日」。');
+    }
+    if (msgs.length > 0) {
+      warning.textContent = msgs.join('\n');
+      warning.style.display = 'block';
+    } else {
+      warning.style.display = 'none';
+    }
+
+    // 任何格式錯誤 → 唔輸出結果（重置為 0）
+    if ((stdStart.value !== '' && stdS === null) ||
+        (stdEnd.value !== '' && stdE === null) ||
+        (actStart.value !== '' && actS === null) ||
+        (actEnd.value !== '' && actE === null)) {
+      renderDeduct(0);
+      renderOT(0);
+      return;
+    }
+
+    // 跨日調整
+    var stdS2 = stdS, stdE2 = stdE, actS2 = actS, actE2 = actE;
+    if (crossDay.checked) {
+      // 標準下班屬翌日：標準下班 < 標準上班；或標準上班未填而標準下班早於 12:00
+      if (stdE !== null) {
+        if (stdS !== null) {
+          if (stdE < stdS) stdE2 = stdE + 1440;
+        } else {
+          if (stdE < 720) stdE2 = stdE + 1440;
+        }
+      }
+      // 實際下班屬翌日
+      if (actE !== null) actE2 = actE + 1440;
+    }
+
+    var deduct = 0, ot = 0;
+
+    // 配對一：標準上班 + 實際上班 → 遲到計扣（早到以標準為準，唔計）
+    if (stdS2 !== null && actS2 !== null && actS2 > stdS2) {
+      deduct += actS2 - stdS2;
+    }
+
+    // 配對二：標準下班 + 實際下班 → 早走計扣／遲走計 OT
+    if (stdE2 !== null && actE2 !== null) {
+      if (actE2 < stdE2) {
+        deduct += stdE2 - actE2;
+      } else if (actE2 > stdE2) {
+        ot += actE2 - stdE2;
+      }
+    }
+
+    renderDeduct(deduct);
+    renderOT(ot);
+  }
+
+  // 初始計算
+  update();
+})();
+</script>
+</body>
+</html>
