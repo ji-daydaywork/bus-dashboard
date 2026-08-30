@@ -76,6 +76,12 @@
     border-color: #e53e3e;
     background: #fff5f5;
   }
+  input[type="text"]:disabled {
+    background: #f1f3f6;
+    color: #9aa5b1;
+    border-color: #d9dee4;
+    cursor: not-allowed;
+  }
   .hint {
     font-size: 12px;
     color: #7b8794;
@@ -155,6 +161,10 @@
     <input type="checkbox" id="crossDay">
     <label for="crossDay">跨日（收工時間屬翌日）</label>
   </div>
+  <div class="checkbox-row">
+    <input type="checkbox" id="holiday">
+    <label for="holiday">放假上班（全段計OT）</label>
+  </div>
   <div id="warning"></div>
   <p class="hint">＊ 標準時間會自動記住上次設定</p>
 </div>
@@ -188,6 +198,7 @@
   var actStart = document.getElementById('actStart');
   var actEnd = document.getElementById('actEnd');
   var crossDay = document.getElementById('crossDay');
+  var holiday = document.getElementById('holiday');
   var warning = document.getElementById('warning');
   var deductOut = document.getElementById('deductOut');
   var otOut = document.getElementById('otOut');
@@ -207,6 +218,16 @@
   actStart.addEventListener('input', update);
   actEnd.addEventListener('input', update);
   crossDay.addEventListener('change', update);
+  holiday.addEventListener('change', function () {
+    var disabled = holiday.checked;
+    stdStart.disabled = disabled;
+    stdEnd.disabled = disabled;
+    if (disabled) {
+      stdStart.classList.remove('error');
+      stdEnd.classList.remove('error');
+    }
+    update();
+  });
 
   // ---- 解析：格式正確回傳分鐘數（0-1439），錯誤回 null ----
   function parseTime(v) {
@@ -260,7 +281,7 @@
 
     // 警告訊息
     var msgs = [];
-    if (stdS !== null && stdE !== null && !crossDay.checked && stdE < stdS) {
+    if (!holiday.checked && stdS !== null && stdE !== null && !crossDay.checked && stdE < stdS) {
       msgs.push('⚠️ 標準下班時間早於標準上班時間，如屬跨日更，請勾選「跨日」。');
     }
     if (!crossDay.checked && actS !== null && actE !== null && actE < actS) {
@@ -274,8 +295,8 @@
     }
 
     // 任何格式錯誤 → 唔輸出結果（重置為 0）
-    if ((stdStart.value !== '' && stdS === null) ||
-        (stdEnd.value !== '' && stdE === null) ||
+    if ((!holiday.checked && stdStart.value !== '' && stdS === null) ||
+        (!holiday.checked && stdEnd.value !== '' && stdE === null) ||
         (actStart.value !== '' && actS === null) ||
         (actEnd.value !== '' && actE === null)) {
       renderDeduct(0);
@@ -300,17 +321,24 @@
 
     var deduct = 0, ot = 0;
 
-    // 配對一：標準上班 + 實際上班 → 遲到計扣（早到以標準為準，唔計）
-    if (stdS2 !== null && actS2 !== null && actS2 > stdS2) {
-      deduct += actS2 - stdS2;
-    }
+    if (holiday.checked) {
+      // 放假上班：實際返工至實際收工，全段計 OT（連飯鐘），無扣
+      if (actS2 !== null && actE2 !== null && actE2 > actS2) {
+        ot = actE2 - actS2;
+      }
+    } else {
+      // 配對一：標準上班 + 實際上班 → 遲到計扣（早到以標準為準，唔計）
+      if (stdS2 !== null && actS2 !== null && actS2 > stdS2) {
+        deduct += actS2 - stdS2;
+      }
 
-    // 配對二：標準下班 + 實際下班 → 早走計扣／遲走計 OT
-    if (stdE2 !== null && actE2 !== null) {
-      if (actE2 < stdE2) {
-        deduct += stdE2 - actE2;
-      } else if (actE2 > stdE2) {
-        ot += actE2 - stdE2;
+      // 配對二：標準下班 + 實際下班 → 早走計扣／遲走計 OT
+      if (stdE2 !== null && actE2 !== null) {
+        if (actE2 < stdE2) {
+          deduct += stdE2 - actE2;
+        } else if (actE2 > stdE2) {
+          ot += actE2 - stdE2;
+        }
       }
     }
 
