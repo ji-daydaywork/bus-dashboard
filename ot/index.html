@@ -142,12 +142,37 @@
   }
   .output-value.deduct { color: #b45309; }
   .output-value.ot { color: #1d6f42; }
+  .arrow {
+    color: #7b8794;
+    font-size: 17px;
+  }
+  .endtime {
+    font-size: 23px;
+    font-weight: 600;
+    font-family: Consolas, "Courier New", monospace;
+    color: #173a63;
+    letter-spacing: 2px;
+  }
+  .endtime.nextday {
+    color: #b45309;
+  }
 </style>
 </head>
 <body>
 
 <h1>OT鐘計算工具</h1>
 <p class="subtitle">輸入時間格式：4位數字（例：1836 = 18時36分）</p>
+
+<div class="card">
+  <div class="card-title">下班時間計算（上班基準 + 9小時36分鐘）</div>
+  <div class="field-row">
+    <label for="baseStart">上班基準</label>
+    <input type="text" id="baseStart" maxlength="4" inputmode="numeric" placeholder="0830" autocomplete="off">
+    <span class="arrow">→</span>
+    <span class="endtime" id="baseEndOut">--</span>
+  </div>
+  <p class="hint">＊ 輸入上班基準時間，即時顯示 9小時36分鐘後的下班時間<br>＊ 跨午夜會標示「翌日」</p>
+</div>
 
 <div class="card">
   <div class="card-title">標準時間</div>
@@ -202,6 +227,9 @@
   var warning = document.getElementById('warning');
   var deductOut = document.getElementById('deductOut');
   var otOut = document.getElementById('otOut');
+  var baseStart = document.getElementById('baseStart');
+  var baseEndOut = document.getElementById('baseEndOut');
+  var DUTY_LENGTH = 9 * 60 + 36;   // 9小時36分鐘 = 576 分鐘
 
   // ---- localStorage：標準時間記住上次設定 ----
   stdStart.value = localStorage.getItem('otclock_stdStart') || '';
@@ -217,6 +245,7 @@
   });
   actStart.addEventListener('input', update);
   actEnd.addEventListener('input', update);
+  baseStart.addEventListener('input', updateBaseEnd);
   crossDay.addEventListener('change', update);
   holiday.addEventListener('change', function () {
     var disabled = holiday.checked;
@@ -265,6 +294,24 @@
   }
   function renderOT(min) {
     otOut.textContent = 'OT ' + formatTime(min) + '(' + formatValue(min) + ')';
+  }
+
+  // ---- 下班時間計算：上班基準 + 9小時36分鐘 ----
+  function pad2(n) { return n < 10 ? '0' + n : String(n); }
+
+  function updateBaseEnd() {
+    var m = parseTime(baseStart.value);
+    markError(baseStart, m);
+    if (baseStart.value === '' || m === null) {
+      baseEndOut.textContent = '--';
+      baseEndOut.classList.remove('nextday');
+      return;
+    }
+    var total = m + DUTY_LENGTH;
+    var nextDay = total >= 1440;
+    var t = total % 1440;
+    baseEndOut.textContent = (nextDay ? '翌日 ' : '') + pad2(Math.floor(t / 60)) + pad2(t % 60);
+    baseEndOut.classList.toggle('nextday', nextDay);
   }
 
   function update() {
@@ -348,6 +395,7 @@
 
   // 初始計算
   update();
+  updateBaseEnd();
 })();
 </script>
 </body>
